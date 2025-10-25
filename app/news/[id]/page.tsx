@@ -29,21 +29,52 @@ const newsArticles: Record<
       "The African tech startup ecosystem has reached a significant milestone with total investments hitting $2.5 billion in 2024.",
     fullContent: `The African tech startup ecosystem has reached a significant milestone with total investments hitting $2.5 billion in 2024. This represents a 40% increase from the previous year, demonstrating growing confidence from global and local investors in African innovation.
 
-Key highlights from the investment report:
-- Nigeria leads with $800M in funding
-- Kenya follows with $600M in venture capital
-- South Africa attracts $500M in tech investments
-- Emerging markets like Rwanda and Ghana see 50% growth
+## Key Investment Highlights
 
-The surge in funding is driven by several factors:
-1. Increased adoption of digital solutions across sectors
-2. Growing consumer base with smartphone penetration
-3. Government support for tech innovation
-4. Success stories attracting international investors
+**Nigeria leads the continent** with $800 million in funding, driven primarily by fintech giants like Flutterwave and Paystack. The country's large population and growing middle class continue to attract international investors.
 
-Major investment areas include fintech, e-commerce, healthtech, and agritech. These sectors are addressing critical challenges while creating significant economic opportunities.
+**Kenya follows closely** with $600 million in venture capital, with notable investments in mobile money, e-commerce, and agritech. The country's robust tech infrastructure and skilled workforce make it an attractive destination for investors.
 
-Looking ahead, experts predict continued growth as African startups scale globally and attract more institutional investors. The ecosystem is maturing with better support systems, mentorship programs, and access to capital.`,
+**South Africa attracts $500 million** in tech investments, particularly in fintech, healthtech, and enterprise software. The country's mature financial sector and strong regulatory framework provide a solid foundation for tech innovation.
+
+**Emerging markets show remarkable growth** with Rwanda and Ghana seeing 50% year-over-year increases in tech funding. These countries are leveraging government support and international partnerships to build thriving tech ecosystems.
+
+## Driving Factors Behind the Growth
+
+### 1. Digital Transformation Acceleration
+The COVID-19 pandemic accelerated digital adoption across Africa, creating new opportunities for tech startups. Remote work, e-commerce, and digital payments became essential, driving demand for innovative solutions.
+
+### 2. Smartphone Penetration
+With over 60% smartphone penetration across the continent, mobile-first solutions are reaching previously underserved populations. This creates massive opportunities for fintech, healthtech, and edtech startups.
+
+### 3. Government Support
+Many African governments are implementing policies to support tech innovation, including tax incentives, startup funding programs, and regulatory sandboxes. This creates a more favorable environment for tech entrepreneurship.
+
+### 4. Success Stories
+High-profile exits and IPOs from African startups like Jumia, Interswitch, and Flutterwave have demonstrated the continent's potential, attracting more international investors.
+
+## Major Investment Sectors
+
+**Fintech** continues to dominate, with mobile money, digital banking, and payment solutions leading the way. Companies like M-Pesa, Flutterwave, and Paystack have shown the potential for financial inclusion through technology.
+
+**E-commerce** is experiencing rapid growth, with platforms like Jumia, Konga, and Takealot expanding across multiple countries. The sector is benefiting from improved logistics and payment infrastructure.
+
+**Healthtech** is addressing critical healthcare challenges, with telemedicine, diagnostic tools, and health management platforms gaining traction. The pandemic highlighted the need for digital health solutions.
+
+**Agritech** is transforming agriculture through precision farming, supply chain optimization, and market access platforms. These solutions are crucial for food security and rural development.
+
+## Looking Ahead
+
+Experts predict continued growth as African startups scale globally and attract more institutional investors. The ecosystem is maturing with better support systems, mentorship programs, and access to capital.
+
+**Key trends to watch:**
+- Increased focus on sustainability and climate tech
+- Expansion of AI and machine learning applications
+- Growth in B2B SaaS solutions
+- Continued fintech innovation and regulation
+- Rise of African tech unicorns
+
+The African tech ecosystem is at an inflection point, with the potential to become a global leader in innovation. With continued investment and support, African startups are well-positioned to solve global challenges while creating significant economic value.`,
   },
   "2": {
     id: 2,

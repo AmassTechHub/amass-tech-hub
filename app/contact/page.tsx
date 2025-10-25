@@ -85,8 +85,8 @@ export default function ContactPage() {
               </div>
               <div>
                 <h3 className="font-semibold text-foreground mb-1">Phone</h3>
-                <p className="text-muted-foreground">+1 (555) 123-4567</p>
-                <p className="text-muted-foreground">+1 (555) 987-6543</p>
+                <p className="text-muted-foreground">+233 243 521 850</p>
+                <p className="text-muted-foreground">+233 302 123 456</p>
               </div>
             </div>
             <div className="flex gap-4">
@@ -95,8 +95,8 @@ export default function ContactPage() {
               </div>
               <div>
                 <h3 className="font-semibold text-foreground mb-1">Address</h3>
-                <p className="text-muted-foreground">123 Tech Street</p>
-                <p className="text-muted-foreground">Lagos, Nigeria</p>
+                <p className="text-muted-foreground">Accra Digital Centre</p>
+                <p className="text-muted-foreground">Accra, Ghana</p>
               </div>
             </div>
           </div>
