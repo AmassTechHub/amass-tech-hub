@@ -76,7 +76,7 @@ export default function ContactPage() {
               <div>
                 <h3 className="font-semibold text-foreground mb-1">Email</h3>
                 <p className="text-muted-foreground">info@amasstechhub.com</p>
-                <p className="text-muted-foreground">support@amasstechhub.com</p>
+                <p className="text-muted-foreground">geeks@amasstechhub.com</p>
               </div>
             </div>
             <div className="flex gap-4">
@@ -84,9 +84,9 @@ export default function ContactPage() {
                 <Phone className="text-primary" size={24} />
               </div>
               <div>
-                <h3 className="font-semibold text-foreground mb-1">Phone</h3>
+                <h3 className="font-semibold text-foreground mb-1">Phone / WhatsApp</h3>
                 <p className="text-muted-foreground">+233 243 521 850</p>
-                <p className="text-muted-foreground">+233 302 123 456</p>
+                <p className="text-muted-foreground">Available 24/7</p>
               </div>
             </div>
             <div className="flex gap-4">
@@ -94,9 +94,9 @@ export default function ContactPage() {
                 <MapPin className="text-primary" size={24} />
               </div>
               <div>
-                <h3 className="font-semibold text-foreground mb-1">Address</h3>
-                <p className="text-muted-foreground">Accra Digital Centre</p>
-                <p className="text-muted-foreground">Accra, Ghana</p>
+                <h3 className="font-semibold text-foreground mb-1">Location</h3>
+                <p className="text-muted-foreground">Kumasi, Ghana</p>
+                <p className="text-muted-foreground">West Africa</p>
               </div>
             </div>
           </div>

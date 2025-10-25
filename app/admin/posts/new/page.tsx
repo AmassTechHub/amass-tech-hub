@@ -1,126 +1,156 @@
 "use client"
 
-import type React from "react"
-
 import { useState } from "react"
+import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { Switch } from "@/components/ui/switch"
 import { ArrowLeft, Save, Eye } from "lucide-react"
-import Link from "next/link"
 
 export default function NewPostPage() {
+  const router = useRouter()
+  const [loading, setLoading] = useState(false)
   const [formData, setFormData] = useState({
     title: "",
-    category: "",
     content: "",
     excerpt: "",
-    image: "",
-    status: "draft",
+    category: "",
+    image_url: "",
+    tags: "",
+    featured: false,
+    published: false
   })
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-    const { name, value } = e.target
-    setFormData((prev) => ({ ...prev, [name]: value }))
+  const categories = [
+    "Startup News",
+    "Infrastructure", 
+    "AI & Tech",
+    "Security",
+    "Fintech",
+    "Cloud",
+    "Reviews",
+    "Tutorials",
+    "Tools"
+  ]
+
+  const handleChange = (field: string, value: any) => {
+    setFormData(prev => ({ ...prev, [field]: value }))
   }
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    console.log("[v0] Form submitted:", formData)
-    alert("Post saved successfully!")
+    setLoading(true)
+
+    try {
+      const response = await fetch('/api/articles', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          ...formData,
+          tags: formData.tags.split(',').map(tag => tag.trim()).filter(Boolean)
+        })
+      })
+
+      if (!response.ok) {
+        throw new Error('Failed to create article')
+      }
+
+      const data = await response.json()
+      router.push('/admin/posts')
+    } catch (error) {
+      console.error('Error creating article:', error)
+      alert('Failed to create article. Please try again.')
+    } finally {
+      setLoading(false)
+    }
   }
 
   return (
-    <div className="p-8">
-      <div className="flex items-center gap-4 mb-8">
-        <Link href="/admin/posts">
-          <Button variant="outline" size="icon">
-            <ArrowLeft size={20} />
+    <div className="min-h-screen bg-gray-50 py-8">
+      <div className="max-w-4xl mx-auto px-4">
+        <div className="flex items-center gap-4 mb-8">
+          <Button
+            variant="outline"
+            onClick={() => router.back()}
+            className="flex items-center gap-2"
+          >
+            <ArrowLeft size={16} />
+            Back
           </Button>
-        </Link>
-        <div>
-          <h1 className="text-3xl font-bold text-foreground">Create New Post</h1>
-          <p className="text-muted-foreground">Write and publish a new article</p>
+          <div>
+            <h1 className="text-3xl font-bold text-gray-900">Create New Post</h1>
+            <p className="text-gray-600">Write and publish a new article</p>
+          </div>
         </div>
-      </div>
 
-      <form onSubmit={handleSubmit} className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Main Content */}
-        <div className="lg:col-span-2 space-y-6">
+        <form onSubmit={handleSubmit} className="space-y-8">
           <Card>
             <CardHeader>
-              <CardTitle>Post Details</CardTitle>
-              <CardDescription>Fill in the basic information about your post</CardDescription>
+              <CardTitle>Article Details</CardTitle>
+              <CardDescription>Basic information about your article</CardDescription>
             </CardHeader>
-            <CardContent className="space-y-4">
+            <CardContent className="space-y-6">
               <div>
-                <label className="block text-sm font-medium mb-2">Title</label>
+                <Label htmlFor="title">Title *</Label>
                 <Input
-                  name="title"
+                  id="title"
                   value={formData.title}
-                  onChange={handleChange}
-                  placeholder="Enter post title"
+                  onChange={(e) => handleChange('title', e.target.value)}
+                  placeholder="Enter article title"
                   required
                 />
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium mb-2">Category</label>
-                  <Select
-                    value={formData.category}
-                    onValueChange={(value) => setFormData((prev) => ({ ...prev, category: value }))}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select category" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="news">News</SelectItem>
-                      <SelectItem value="reviews">Reviews</SelectItem>
-                      <SelectItem value="tutorials">Tutorials</SelectItem>
-                      <SelectItem value="tools">Tools</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium mb-2">Status</label>
-                  <Select
-                    value={formData.status}
-                    onValueChange={(value) => setFormData((prev) => ({ ...prev, status: value }))}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select status" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="draft">Draft</SelectItem>
-                      <SelectItem value="published">Published</SelectItem>
-                      <SelectItem value="scheduled">Scheduled</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
-
               <div>
-                <label className="block text-sm font-medium mb-2">Excerpt</label>
+                <Label htmlFor="excerpt">Excerpt</Label>
                 <Textarea
-                  name="excerpt"
+                  id="excerpt"
                   value={formData.excerpt}
-                  onChange={handleChange}
-                  placeholder="Brief summary of the post"
+                  onChange={(e) => handleChange('excerpt', e.target.value)}
+                  placeholder="Brief description of the article"
                   rows={3}
                 />
               </div>
 
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                  <Label htmlFor="category">Category *</Label>
+                  <Select value={formData.category} onValueChange={(value) => handleChange('category', value)}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select category" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {categories.map(category => (
+                        <SelectItem key={category} value={category}>
+                          {category}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div>
+                  <Label htmlFor="image_url">Featured Image URL</Label>
+                  <Input
+                    id="image_url"
+                    value={formData.image_url}
+                    onChange={(e) => handleChange('image_url', e.target.value)}
+                    placeholder="https://example.com/image.jpg"
+                  />
+                </div>
+              </div>
+
               <div>
-                <label className="block text-sm font-medium mb-2">Featured Image URL</label>
+                <Label htmlFor="tags">Tags</Label>
                 <Input
-                  name="image"
-                  value={formData.image}
-                  onChange={handleChange}
-                  placeholder="https://example.com/image.jpg"
+                  id="tags"
+                  value={formData.tags}
+                  onChange={(e) => handleChange('tags', e.target.value)}
+                  placeholder="tech, africa, startup (comma separated)"
                 />
               </div>
             </CardContent>
@@ -129,56 +159,75 @@ export default function NewPostPage() {
           <Card>
             <CardHeader>
               <CardTitle>Content</CardTitle>
-              <CardDescription>Write your post content here</CardDescription>
+              <CardDescription>Write your article content</CardDescription>
             </CardHeader>
             <CardContent>
-              <Textarea
-                name="content"
-                value={formData.content}
-                onChange={handleChange}
-                placeholder="Start writing your post..."
-                rows={12}
-                className="font-mono text-sm"
-              />
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Sidebar */}
-        <div className="space-y-6">
-          <Card>
-            <CardHeader>
-              <CardTitle>Publish</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-3">
-              <Button type="submit" className="w-full gap-2">
-                <Save size={20} />
-                Save Post
-              </Button>
-              <Button type="button" variant="outline" className="w-full gap-2 bg-transparent">
-                <Eye size={20} />
-                Preview
-              </Button>
+              <div>
+                <Label htmlFor="content">Content *</Label>
+                <Textarea
+                  id="content"
+                  value={formData.content}
+                  onChange={(e) => handleChange('content', e.target.value)}
+                  placeholder="Write your article content here..."
+                  rows={15}
+                  required
+                />
+              </div>
             </CardContent>
           </Card>
 
           <Card>
             <CardHeader>
-              <CardTitle className="text-base">SEO Settings</CardTitle>
+              <CardTitle>Publishing Options</CardTitle>
+              <CardDescription>Control how your article is published</CardDescription>
             </CardHeader>
-            <CardContent className="space-y-3 text-sm">
-              <div>
-                <label className="block font-medium mb-1">Meta Description</label>
-                <Textarea placeholder="SEO meta description" rows={3} />
+            <CardContent className="space-y-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <Label htmlFor="featured">Featured Article</Label>
+                  <p className="text-sm text-gray-600">Show this article prominently on the homepage</p>
+                </div>
+                <Switch
+                  id="featured"
+                  checked={formData.featured}
+                  onCheckedChange={(checked) => handleChange('featured', checked)}
+                />
               </div>
-              <div>
-                <label className="block font-medium mb-1">Keywords</label>
-                <Input placeholder="Comma-separated keywords" />
+
+              <div className="flex items-center justify-between">
+                <div>
+                  <Label htmlFor="published">Publish Now</Label>
+                  <p className="text-sm text-gray-600">Make this article visible to readers</p>
+                </div>
+                <Switch
+                  id="published"
+                  checked={formData.published}
+                  onCheckedChange={(checked) => handleChange('published', checked)}
+                />
               </div>
             </CardContent>
           </Card>
-        </div>
-      </form>
+
+          <div className="flex gap-4">
+            <Button
+              type="submit"
+              disabled={loading}
+              className="flex items-center gap-2"
+            >
+              <Save size={16} />
+              {loading ? 'Saving...' : 'Save Article'}
+            </Button>
+
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => router.push('/admin/posts')}
+            >
+              Cancel
+            </Button>
+          </div>
+        </form>
+      </div>
     </div>
   )
 }

@@ -1,51 +1,80 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
-import { Plus, Edit2, Trash2, Eye } from "lucide-react"
+import { Plus, Edit2, Trash2, Eye, RefreshCw } from "lucide-react"
 
-const mockPosts = [
-  {
-    id: 1,
-    title: "5G Networks Transforming African Tech Landscape",
-    category: "News",
-    status: "Published",
-    views: 1240,
-    date: "2025-01-15",
-  },
-  {
-    id: 2,
-    title: "Best AI Tools for Content Creators",
-    category: "Reviews",
-    status: "Published",
-    views: 892,
-    date: "2025-01-14",
-  },
-  {
-    id: 3,
-    title: "Getting Started with React 19",
-    category: "Tutorials",
-    status: "Draft",
-    views: 0,
-    date: "2025-01-13",
-  },
-  {
-    id: 4,
-    title: "Figma vs Adobe XD: Complete Comparison",
-    category: "Reviews",
-    status: "Published",
-    views: 2150,
-    date: "2025-01-12",
-  },
-]
+interface Article {
+  id: string
+  title: string
+  category: string
+  published: boolean
+  views: number
+  created_at: string
+  authors?: {
+    name: string
+  }
+}
 
 export default function PostsPage() {
   const [searchTerm, setSearchTerm] = useState("")
+  const [articles, setArticles] = useState<Article[]>([])
+  const [loading, setLoading] = useState(true)
 
-  const filteredPosts = mockPosts.filter((post) => post.title.toLowerCase().includes(searchTerm.toLowerCase()))
+  // Fetch articles from database
+  useEffect(() => {
+    fetchArticles()
+  }, [])
+
+  const fetchArticles = async () => {
+    try {
+      const response = await fetch('/api/articles')
+      if (response.ok) {
+        const data = await response.json()
+        setArticles(data.articles || [])
+      }
+    } catch (error) {
+      console.error('Error fetching articles:', error)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const handleDelete = async (id: string) => {
+    if (!confirm('Are you sure you want to delete this article?')) return
+
+    try {
+      const response = await fetch(`/api/articles/${id}`, {
+        method: 'DELETE'
+      })
+
+      if (response.ok) {
+        fetchArticles() // Refresh the list
+      } else {
+        alert('Failed to delete article')
+      }
+    } catch (error) {
+      console.error('Error deleting article:', error)
+      alert('Failed to delete article')
+    }
+  }
+
+  const filteredPosts = articles.filter((post) => 
+    post.title.toLowerCase().includes(searchTerm.toLowerCase())
+  )
+
+  if (loading) {
+    return (
+      <div className="p-8">
+        <div className="flex items-center justify-center h-64">
+          <RefreshCw className="animate-spin" size={32} />
+        </div>
+      </div>
+    )
+  }
 
   return (
     <div className="p-8">
