@@ -7,7 +7,7 @@ import "./globals.css"
 import Header from "@/components/layout/header"
 import Footer from "@/components/layout/footer"
 import { AuthProvider } from "@/lib/auth-context"
-import { ThemeProvider } from "@/lib/theme-context"
+import { ThemeProvider } from "@/components/theme-provider"
 
 const _geist = Geist({ subsets: ["latin"] })
 const _geistMono = Geist_Mono({ subsets: ["latin"] })
@@ -135,7 +135,7 @@ export default function RootLayout({
         />
       </head>
       <body className={`font-sans antialiased flex flex-col min-h-screen`}>
-        <ThemeProvider>
+        <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
           <AuthProvider>
             <Header />
             <main className="flex-1">{children}</main>
