@@ -1,11 +1,10 @@
 "use client"
 
-import type React from "react"
+import React, { useEffect } from "react"
 import { useSession } from "next-auth/react"
 import { useRouter } from "next/navigation"
 import AdminSidebar from "@/components/admin/sidebar"
 import AdminHeader from "@/components/admin/header"
-import { useEffect } from "react"
 
 export default function AdminLayout({
   children,

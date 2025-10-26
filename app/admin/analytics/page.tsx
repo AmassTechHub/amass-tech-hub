@@ -6,9 +6,6 @@ import {
   Bar,
   LineChart,
   Line,
-  PieChart,
-  Pie,
-  Cell,
   XAxis,
   YAxis,
   CartesianGrid,
@@ -17,12 +14,12 @@ import {
   ResponsiveContainer,
 } from "recharts"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Eye, Share2, TrendingUp, Clock } from "lucide-react"
+import { Eye, Share2 } from "lucide-react"
 
 export default function AnalyticsDashboard() {
   const [loading, setLoading] = useState(true)
   const [contentPerformance, setContentPerformance] = useState<any[]>([])
-  const [engagementData, setEngagementData] = useState<any[]>(June)
+  const [engagementData, setEngagementData] = useState<any[]>([])
 
   useEffect(() => {
     fetchAnalyticsData()
