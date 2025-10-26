@@ -1,26 +1,24 @@
-import Link from "next/link"
-import { Home } from "lucide-react"
-
 export default function NotFound() {
   return (
-    <div className="min-h-screen bg-background flex items-center justify-center px-4">
-      <div className="max-w-md w-full text-center">
-        <h1 className="text-9xl font-bold text-primary mb-4">404</h1>
-        <h2 className="text-3xl font-bold text-foreground mb-4">Page Not Found</h2>
-        <p className="text-muted-foreground mb-8">
+    <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: '#f9fafb' }}>
+      <div style={{ textAlign: 'center', maxWidth: '500px', padding: '20px' }}>
+        <h1 style={{ fontSize: '120px', fontWeight: 'bold', color: '#3c0a6b', marginBottom: '20px' }}>404</h1>
+        <h2 style={{ fontSize: '32px', fontWeight: 'bold', color: '#1f2937', marginBottom: '16px' }}>Page Not Found</h2>
+        <p style={{ color: '#6b7280', marginBottom: '32px' }}>
           The page you're looking for doesn't exist or has been moved.
         </p>
-        <div className="flex gap-4 justify-center">
-          <Link 
-            href="/"
-            className="bg-primary text-white px-6 py-3 rounded-lg font-semibold hover:bg-primary/90 transition-colors flex items-center gap-2 inline-flex"
-          >
-            <Home size={20} />
-            Go Home
-          </Link>
-        </div>
+        <a href="/" style={{ 
+          backgroundColor: '#3c0a6b', 
+          color: 'white', 
+          padding: '12px 24px', 
+          borderRadius: '8px', 
+          textDecoration: 'none',
+          fontWeight: '600',
+          display: 'inline-block'
+        }}>
+          Go Home
+        </a>
       </div>
     </div>
   )
 }
-
