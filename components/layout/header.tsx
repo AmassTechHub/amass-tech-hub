@@ -35,8 +35,20 @@ export default function Header() {
         <div className="flex justify-between items-center h-16">
           {/* Logo */}
           <Link href="/" className="flex items-center gap-2">
-            <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
-              <span className="text-accent font-bold text-lg">A</span>
+            <div className="w-8 h-8 flex items-center justify-center">
+              <img 
+                src="/logo.png" 
+                alt="Amass Tech Hub Logo" 
+                className="w-8 h-8 object-contain"
+                onError={(e) => {
+                  // Fallback to text logo if image fails to load
+                  e.currentTarget.style.display = 'none'
+                  e.currentTarget.nextElementSibling.style.display = 'flex'
+                }}
+              />
+              <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center" style={{display: 'none'}}>
+                <span className="text-accent font-bold text-lg">A</span>
+              </div>
             </div>
             <span className="font-bold text-lg text-primary hidden sm:inline">Amass Tech Hub</span>
           </Link>

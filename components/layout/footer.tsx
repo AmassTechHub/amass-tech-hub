@@ -17,8 +17,20 @@ export default function Footer() {
           {/* Brand */}
           <div>
             <div className="flex items-center gap-2 mb-4">
-              <div className="w-8 h-8 bg-accent rounded-lg flex items-center justify-center">
-                <span className="text-primary font-bold">A</span>
+              <div className="w-8 h-8 flex items-center justify-center">
+                <img 
+                  src="/logo.png" 
+                  alt="Amass Tech Hub Logo" 
+                  className="w-8 h-8 object-contain"
+                  onError={(e) => {
+                    // Fallback to text logo if image fails to load
+                    e.currentTarget.style.display = 'none'
+                    e.currentTarget.nextElementSibling.style.display = 'flex'
+                  }}
+                />
+                <div className="w-8 h-8 bg-accent rounded-lg flex items-center justify-center" style={{display: 'none'}}>
+                  <span className="text-primary font-bold">A</span>
+                </div>
               </div>
               <span className="font-bold text-lg">Amass Tech Hub</span>
             </div>
