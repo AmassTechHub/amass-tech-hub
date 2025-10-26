@@ -3,7 +3,7 @@
 import type React from "react"
 
 import { useState } from "react"
-import { useAuth } from "@/lib/auth-context"
+import { signIn } from "next-auth/react"
 import { useRouter } from "next/navigation"
 
 export default function LoginForm() {
@@ -11,7 +11,6 @@ export default function LoginForm() {
   const [password, setPassword] = useState("")
   const [error, setError] = useState("")
   const [loading, setLoading] = useState(false)
-  const { login } = useAuth()
   const router = useRouter()
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -20,8 +19,17 @@ export default function LoginForm() {
     setLoading(true)
 
     try {
-      await login(email, password)
-      router.push("/dashboard")
+      const result = await signIn("credentials", {
+        redirect: false,
+        email,
+        password,
+      })
+      
+      if (result?.error) {
+        setError("Invalid email or password")
+      } else {
+        router.push("/admin")
+      }
     } catch (err) {
       setError("Login failed. Please try again.")
     } finally {
