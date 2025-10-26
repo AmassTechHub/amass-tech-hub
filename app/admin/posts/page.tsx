@@ -10,10 +10,16 @@ import { Plus, Edit2, Trash2, Eye, RefreshCw } from "lucide-react"
 interface Article {
   id: string
   title: string
-  category: string
-  published: boolean
+  slug: string
+  status: 'draft' | 'published' | 'archived'
+  featured: boolean
   views: number
   created_at: string
+  published_at?: string
+  categories?: {
+    name: string
+    color: string
+  }
   authors?: {
     name: string
   }
@@ -62,22 +68,51 @@ export default function PostsPage() {
     }
   }
 
+  const handleStatusToggle = async (id: string, currentStatus: string) => {
+    const newStatus = currentStatus === 'published' ? 'draft' : 'published'
+    
+    try {
+      const response = await fetch(`/api/articles/${id}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ status: newStatus }),
+      })
+
+      if (response.ok) {
+        fetchArticles() // Refresh the list
+      } else {
+        alert('Failed to update article status')
+      }
+    } catch (error) {
+      console.error('Error updating article:', error)
+      alert('Failed to update article status')
+    }
+  }
+
   const filteredPosts = articles.filter((post) => 
     post.title.toLowerCase().includes(searchTerm.toLowerCase())
   )
 
+  const formatDate = (dateString: string) => {
+    return new Date(dateString).toLocaleDateString('en-US', {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric'
+    })
+  }
+
   if (loading) {
     return (
-      <div className="p-8">
-        <div className="flex items-center justify-center h-64">
-          <RefreshCw className="animate-spin" size={32} />
-        </div>
+      <div className="flex items-center justify-center h-64">
+        <RefreshCw className="animate-spin" size={32} />
       </div>
     )
   }
 
   return (
-    <div className="p-8">
+    <div>
       <div className="flex justify-between items-center mb-8">
         <div>
           <h1 className="text-3xl font-bold text-foreground">Posts</h1>
@@ -113,6 +148,7 @@ export default function PostsPage() {
                   <th className="text-left py-3 px-4 font-semibold">Title</th>
                   <th className="text-left py-3 px-4 font-semibold">Category</th>
                   <th className="text-left py-3 px-4 font-semibold">Status</th>
+                  <th className="text-left py-3 px-4 font-semibold">Featured</th>
                   <th className="text-left py-3 px-4 font-semibold">Views</th>
                   <th className="text-left py-3 px-4 font-semibold">Date</th>
                   <th className="text-left py-3 px-4 font-semibold">Actions</th>
@@ -121,32 +157,72 @@ export default function PostsPage() {
               <tbody>
                 {filteredPosts.map((post) => (
                   <tr key={post.id} className="border-b border-border hover:bg-card transition-colors">
-                    <td className="py-3 px-4">{post.title}</td>
                     <td className="py-3 px-4">
-                      <span className="px-2 py-1 bg-primary/10 text-primary rounded text-xs font-medium">
-                        {post.category}
-                      </span>
+                      <div className="max-w-xs truncate" title={post.title}>
+                        {post.title}
+                      </div>
                     </td>
                     <td className="py-3 px-4">
-                      <span
-                        className={`px-2 py-1 rounded text-xs font-medium ${
-                          post.status === "Published" ? "bg-green-100 text-green-700" : "bg-yellow-100 text-yellow-700"
+                      {post.categories ? (
+                        <span 
+                          className="px-2 py-1 rounded text-xs font-medium"
+                          style={{ 
+                            backgroundColor: `${post.categories.color}20`, 
+                            color: post.categories.color 
+                          }}
+                        >
+                          {post.categories.name}
+                        </span>
+                      ) : (
+                        <span className="text-muted-foreground">No category</span>
+                      )}
+                    </td>
+                    <td className="py-3 px-4">
+                      <button
+                        onClick={() => handleStatusToggle(post.id, post.status)}
+                        className={`px-2 py-1 rounded text-xs font-medium transition-colors ${
+                          post.status === "published" 
+                            ? "bg-green-100 text-green-700 hover:bg-green-200" 
+                            : "bg-yellow-100 text-yellow-700 hover:bg-yellow-200"
                         }`}
                       >
                         {post.status}
-                      </span>
+                      </button>
+                    </td>
+                    <td className="py-3 px-4">
+                      {post.featured ? (
+                        <span className="px-2 py-1 bg-accent/10 text-accent rounded text-xs font-medium">
+                          Featured
+                        </span>
+                      ) : (
+                        <span className="text-muted-foreground">-</span>
+                      )}
                     </td>
                     <td className="py-3 px-4">{post.views}</td>
-                    <td className="py-3 px-4">{post.date}</td>
+                    <td className="py-3 px-4">
+                      {formatDate(post.published_at || post.created_at)}
+                    </td>
                     <td className="py-3 px-4">
                       <div className="flex gap-2">
-                        <button className="p-1 hover:bg-card rounded transition-colors" title="View">
+                        <Link 
+                          href={`/news/${post.slug}`}
+                          className="p-1 hover:bg-card rounded transition-colors" 
+                          title="View"
+                        >
                           <Eye size={16} className="text-muted-foreground" />
-                        </button>
-                        <button className="p-1 hover:bg-card rounded transition-colors" title="Edit">
+                        </Link>
+                        <Link 
+                          href={`/admin/posts/${post.id}/edit`}
+                          className="p-1 hover:bg-card rounded transition-colors" 
+                          title="Edit"
+                        >
                           <Edit2 size={16} className="text-muted-foreground" />
-                        </button>
-                        <button className="p-1 hover:bg-card rounded transition-colors" title="Delete">
+                        </Link>
+                        <button 
+                          onClick={() => handleDelete(post.id)}
+                          className="p-1 hover:bg-card rounded transition-colors" 
+                          title="Delete"
+                        >
                           <Trash2 size={16} className="text-destructive" />
                         </button>
                       </div>

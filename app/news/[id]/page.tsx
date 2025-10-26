@@ -3,6 +3,39 @@ import { ArrowLeft, Calendar, User, Share2, Eye } from "lucide-react"
 import RelatedArticles from "@/components/news/related-articles"
 import { getRealArticle, incrementArticleViews } from "@/lib/real-content"
 import { notFound } from "next/navigation"
+import type { Metadata } from "next"
+
+export async function generateMetadata({ params }: { params: { id: string } }): Promise<Metadata> {
+  const article = await getRealArticle(params.id)
+  
+  if (!article) {
+    return {
+      title: "Article Not Found",
+      description: "The requested article could not be found."
+    }
+  }
+
+  return {
+    title: article.seo_title || article.title,
+    description: article.seo_description || article.excerpt,
+    keywords: article.tags,
+    authors: [{ name: article.authors.name }],
+    openGraph: {
+      title: article.seo_title || article.title,
+      description: article.seo_description || article.excerpt,
+      type: "article",
+      publishedTime: article.published_at || article.created_at,
+      authors: [article.authors.name],
+      images: article.featured_image ? [article.featured_image] : undefined,
+    },
+    twitter: {
+      card: "summary_large_image",
+      title: article.seo_title || article.title,
+      description: article.seo_description || article.excerpt,
+      images: article.featured_image ? [article.featured_image] : undefined,
+    },
+  }
+}
 
 export default async function NewsDetailPage({ params }: { params: { id: string } }) {
   const article = await getRealArticle(params.id)
@@ -21,6 +54,43 @@ export default async function NewsDetailPage({ params }: { params: { id: string 
 
   return (
     <div className="min-h-screen bg-background">
+      {/* Structured Data */}
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify({
+            "@context": "https://schema.org",
+            "@type": "Article",
+            headline: article.title,
+            description: article.excerpt,
+            image: article.featured_image,
+            datePublished: article.published_at || article.created_at,
+            dateModified: article.updated_at,
+            author: {
+              "@type": "Person",
+              name: article.authors.name,
+              email: article.authors.email,
+            },
+            publisher: {
+              "@type": "Organization",
+              name: "Amass Tech Hub",
+              logo: {
+                "@type": "ImageObject",
+                url: "https://www.amasstechhub.com/logo.png",
+              },
+            },
+            mainEntityOfPage: {
+              "@type": "WebPage",
+              "@id": `https://www.amasstechhub.com/news/${article.slug}`,
+            },
+            articleSection: article.categories.name,
+            keywords: article.tags.join(", "),
+            wordCount: article.content.split(" ").length,
+            timeRequired: `PT${article.reading_time}M`,
+          }),
+        }}
+      />
+
       {/* Header */}
       <section className="bg-primary text-white py-8">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -33,11 +103,11 @@ export default async function NewsDetailPage({ params }: { params: { id: string 
             <span 
               className="px-3 py-1 text-sm font-semibold rounded-full"
               style={{ 
-                backgroundColor: `${article.category.color}20`, 
-                color: article.category.color 
+                backgroundColor: `${article.categories.color}20`, 
+                color: article.categories.color 
               }}
             >
-              {article.category.name}
+              {article.categories.name}
             </span>
             <div className="flex items-center gap-2">
               <Calendar size={18} />
@@ -45,7 +115,7 @@ export default async function NewsDetailPage({ params }: { params: { id: string 
             </div>
             <div className="flex items-center gap-2">
               <User size={18} />
-              {article.author.name}
+              {article.authors.name}
             </div>
             <div className="flex items-center gap-2">
               <Eye size={18} />

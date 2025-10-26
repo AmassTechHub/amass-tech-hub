@@ -1,25 +1,34 @@
-import { type NextRequest, NextResponse } from "next/server"
+import { NextRequest, NextResponse } from 'next/server'
+import { supabaseAdmin } from '@/lib/supabase'
 
-// Mock database
-const contactSubmissions: Array<{
-  id: string
-  name: string
-  email: string
-  subject: string
-  message: string
-  submittedAt: Date
-}> = []
-
+// GET all contact submissions
 export async function GET(request: NextRequest) {
-  // In production, add authentication to protect this endpoint
-  const authHeader = request.headers.get("authorization")
+  try {
+    const { searchParams } = new URL(request.url)
+    const status = searchParams.get('status')
+    const page = parseInt(searchParams.get('page') || '1')
+    const limit = parseInt(searchParams.get('limit') || '10')
 
-  if (!authHeader || !authHeader.startsWith("Bearer ")) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+    let query = supabaseAdmin
+      .from('contact_submissions')
+      .select('*')
+      .order('created_at', { ascending: false })
+
+    if (status) {
+      query = query.eq('status', status)
+    }
+
+    const { data, error } = await query
+      .range((page - 1) * limit, page * limit - 1)
+
+    if (error) {
+      console.error('Database error:', error)
+      return NextResponse.json({ error: 'Failed to fetch submissions' }, { status: 500 })
+    }
+
+    return NextResponse.json({ submissions: data || [] })
+  } catch (error) {
+    console.error('API error:', error)
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
-
-  return NextResponse.json({
-    total: contactSubmissions.length,
-    submissions: contactSubmissions.sort((a, b) => b.submittedAt.getTime() - a.submittedAt.getTime()),
-  })
 }

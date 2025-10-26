@@ -14,19 +14,94 @@ import {
 } from "recharts"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Users, FileText, MessageSquare, TrendingUp } from "lucide-react"
+import { useEffect, useState } from "react"
 
-const dashboardData = [
-  { month: "Jan", posts: 12, views: 4000, subscribers: 240 },
-  { month: "Feb", posts: 19, views: 3000, subscribers: 221 },
-  { month: "Mar", posts: 15, views: 2000, subscribers: 229 },
-  { month: "Apr", posts: 22, views: 2780, subscribers: 200 },
-  { month: "May", posts: 18, views: 1890, subscribers: 250 },
-  { month: "Jun", posts: 25, views: 2390, subscribers: 290 },
-]
+interface DashboardStats {
+  totalArticles: number
+  totalSubscribers: number
+  totalContactSubmissions: number
+  totalViews: number
+  recentArticles: number
+  recentSubscribers: number
+}
 
 export default function AdminDashboard() {
+  const [stats, setStats] = useState<DashboardStats>({
+    totalArticles: 0,
+    totalSubscribers: 0,
+    totalContactSubmissions: 0,
+    totalViews: 0,
+    recentArticles: 0,
+    recentSubscribers: 0
+  })
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    fetchDashboardStats()
+  }, [])
+
+  const fetchDashboardStats = async () => {
+    try {
+      const [articlesRes, subscribersRes, contactRes] = await Promise.all([
+        fetch('/api/articles'),
+        fetch('/api/newsletter/subscribers'),
+        fetch('/api/contact/submissions')
+      ])
+
+      const articles = articlesRes.ok ? await articlesRes.json() : { articles: [] }
+      const subscribers = subscribersRes.ok ? await subscribersRes.json() : { subscribers: [] }
+      const contact = contactRes.ok ? await contactRes.json() : { submissions: [] }
+
+      const totalViews = articles.articles.reduce((sum: number, article: any) => sum + (article.views || 0), 0)
+      const recentArticles = articles.articles.filter((article: any) => {
+        const createdAt = new Date(article.created_at)
+        const thirtyDaysAgo = new Date()
+        thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30)
+        return createdAt > thirtyDaysAgo
+      }).length
+
+      const recentSubscribers = subscribers.subscribers.filter((sub: any) => {
+        const subscribedAt = new Date(sub.subscribed_at)
+        const thirtyDaysAgo = new Date()
+        thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30)
+        return subscribedAt > thirtyDaysAgo
+      }).length
+
+      setStats({
+        totalArticles: articles.articles.length,
+        totalSubscribers: subscribers.subscribers.length,
+        totalContactSubmissions: contact.submissions.length,
+        totalViews,
+        recentArticles,
+        recentSubscribers
+      })
+    } catch (error) {
+      console.error('Error fetching dashboard stats:', error)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  // Mock data for charts (in a real app, you'd fetch this from analytics)
+  const dashboardData = [
+    { month: "Jan", posts: 12, views: 4000, subscribers: 240 },
+    { month: "Feb", posts: 19, views: 3000, subscribers: 221 },
+    { month: "Mar", posts: 15, views: 2000, subscribers: 229 },
+    { month: "Apr", posts: 22, views: 2780, subscribers: 200 },
+    { month: "May", posts: 18, views: 1890, subscribers: 250 },
+    { month: "Jun", posts: 25, views: 2390, subscribers: 290 },
+  ]
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+      </div>
+    )
+  }
+
   return (
-    <div className="p-8">
+    <div>
       <div className="mb-8">
         <h1 className="text-3xl font-bold text-foreground">Dashboard</h1>
         <p className="text-muted-foreground">Welcome back! Here's your content overview.</p>
@@ -40,8 +115,8 @@ export default function AdminDashboard() {
             <FileText className="h-4 w-4 text-primary" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">127</div>
-            <p className="text-xs text-muted-foreground">+12 this month</p>
+            <div className="text-2xl font-bold">{stats.totalArticles}</div>
+            <p className="text-xs text-muted-foreground">+{stats.recentArticles} this month</p>
           </CardContent>
         </Card>
 
@@ -51,30 +126,30 @@ export default function AdminDashboard() {
             <Users className="h-4 w-4 text-accent" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">2,543</div>
-            <p className="text-xs text-muted-foreground">+180 this month</p>
+            <div className="text-2xl font-bold">{stats.totalSubscribers}</div>
+            <p className="text-xs text-muted-foreground">+{stats.recentSubscribers} this month</p>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Comments</CardTitle>
+            <CardTitle className="text-sm font-medium">Contact Messages</CardTitle>
             <MessageSquare className="h-4 w-4 text-primary" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">342</div>
-            <p className="text-xs text-muted-foreground">+45 this month</p>
+            <div className="text-2xl font-bold">{stats.totalContactSubmissions}</div>
+            <p className="text-xs text-muted-foreground">Total messages received</p>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Page Views</CardTitle>
+            <CardTitle className="text-sm font-medium">Total Views</CardTitle>
             <TrendingUp className="h-4 w-4 text-accent" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">18.5K</div>
-            <p className="text-xs text-muted-foreground">+2.5K this month</p>
+            <div className="text-2xl font-bold">{stats.totalViews.toLocaleString()}</div>
+            <p className="text-xs text-muted-foreground">Across all articles</p>
           </CardContent>
         </Card>
       </div>

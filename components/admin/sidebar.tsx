@@ -4,10 +4,17 @@ import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { LayoutDashboard, FileText, Users, Settings, LogOut, Menu } from "lucide-react"
 import { useState } from "react"
+import { signOut } from "next-auth/react"
+import { useSession } from "next-auth/react"
 
 export default function AdminSidebar() {
   const pathname = usePathname()
   const [isOpen, setIsOpen] = useState(true)
+  const { data: session } = useSession()
+
+  const handleLogout = async () => {
+    await signOut({ callbackUrl: "/" })
+  }
 
   const menuItems = [
     { icon: LayoutDashboard, label: "Dashboard", href: "/admin" },
@@ -63,9 +70,16 @@ export default function AdminSidebar() {
           })}
         </nav>
 
-        {/* Logout */}
+        {/* User Info & Logout */}
         <div className="p-4 border-t border-border">
-          <button className="flex items-center gap-3 w-full px-4 py-3 text-foreground hover:bg-background rounded-lg transition-colors">
+          <div className="mb-3 px-4 py-2 bg-muted rounded-lg">
+            <p className="text-sm font-medium text-foreground">{session?.user?.name}</p>
+            <p className="text-xs text-muted-foreground">{session?.user?.email}</p>
+          </div>
+          <button 
+            onClick={handleLogout}
+            className="flex items-center gap-3 w-full px-4 py-3 text-foreground hover:bg-background rounded-lg transition-colors"
+          >
             <LogOut size={20} />
             <span className="font-medium">Logout</span>
           </button>

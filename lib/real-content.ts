@@ -8,13 +8,13 @@ export interface RealArticle {
   excerpt: string
   content: string
   featured_image?: string
-  category: {
+  categories: {
     id: string
     name: string
     slug: string
     color: string
   }
-  author: {
+  authors: {
     id: string
     name: string
     email: string
@@ -60,8 +60,18 @@ export async function getRealArticles(limit?: number, category?: string, feature
       .from('articles')
       .select(`
         *,
-        category:categories(*),
-        author:authors(*)
+        categories (
+          id,
+          name,
+          slug,
+          color
+        ),
+        authors (
+          id,
+          name,
+          email,
+          avatar_url
+        )
       `)
       .eq('status', 'published')
       .order('published_at', { ascending: false })
@@ -71,7 +81,7 @@ export async function getRealArticles(limit?: number, category?: string, feature
     }
 
     if (category) {
-      query = query.eq('category.slug', category)
+      query = query.eq('category_id', category)
     }
 
     if (limit) {
@@ -92,17 +102,27 @@ export async function getRealArticles(limit?: number, category?: string, feature
   }
 }
 
-// Fetch single article by slug
-export async function getRealArticle(slug: string): Promise<RealArticle | null> {
+// Fetch single article by slug or ID
+export async function getRealArticle(slugOrId: string): Promise<RealArticle | null> {
   try {
     const { data, error } = await supabase
       .from('articles')
       .select(`
         *,
-        category:categories(*),
-        author:authors(*)
+        categories (
+          id,
+          name,
+          slug,
+          color
+        ),
+        authors (
+          id,
+          name,
+          email,
+          avatar_url
+        )
       `)
-      .eq('slug', slug)
+      .or(`slug.eq.${slugOrId},id.eq.${slugOrId}`)
       .eq('status', 'published')
       .single()
 
@@ -165,8 +185,18 @@ export async function searchRealArticles(query: string): Promise<RealArticle[]> 
       .from('articles')
       .select(`
         *,
-        category:categories(*),
-        author:authors(*)
+        categories (
+          id,
+          name,
+          slug,
+          color
+        ),
+        authors (
+          id,
+          name,
+          email,
+          avatar_url
+        )
       `)
       .eq('status', 'published')
       .or(`title.ilike.%${query}%,excerpt.ilike.%${query}%,content.ilike.%${query}%`)
@@ -187,8 +217,15 @@ export async function searchRealArticles(query: string): Promise<RealArticle[]> 
 // Increment article views
 export async function incrementArticleViews(articleId: string): Promise<void> {
   try {
-    await supabase.rpc('increment_article_views', { article_id: articleId })
+    const { error } = await supabase
+      .from('articles')
+      .update({ views: supabase.raw('views + 1') })
+      .eq('id', articleId)
+
+    if (error) {
+      console.error('Error incrementing views:', error)
+    }
   } catch (error) {
-    console.error('Error incrementing views:', error)
+    console.error('Error in incrementArticleViews:', error)
   }
 }

@@ -1,14 +1,6 @@
 import { type NextRequest, NextResponse } from "next/server"
-
-// Mock database for contact submissions
-const contactSubmissions: Array<{
-  id: string
-  name: string
-  email: string
-  subject: string
-  message: string
-  submittedAt: Date
-}> = []
+import { supabaseAdmin } from '@/lib/supabase'
+import { sendContactFormEmail } from '@/lib/email'
 
 export async function POST(request: NextRequest) {
   try {
@@ -24,33 +16,64 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Invalid email address" }, { status: 400 })
     }
 
-    const submission = {
-      id: Date.now().toString(),
-      name,
-      email,
-      subject,
-      message,
-      submittedAt: new Date(),
+    // Check if database is available
+    const hasDatabase = process.env.SUPABASE_URL && process.env.SUPABASE_SERVICE_ROLE_KEY
+    
+    if (hasDatabase) {
+      // Save to database
+      const { data, error } = await supabaseAdmin
+        .from('contact_submissions')
+        .insert({
+          name,
+          email,
+          subject,
+          message,
+          status: 'new'
+        })
+        .select()
+        .single()
+
+      if (error) {
+        console.error('Database error:', error)
+        return NextResponse.json({ error: "Failed to save message" }, { status: 500 })
+      }
+
+      console.log("[Contact] Form submission saved to database:", data.id)
+
+      // Send email notification
+      const emailResult = await sendContactFormEmail({ name, email, subject, message })
+      if (emailResult.success) {
+        console.log("[Contact] Email notification sent successfully")
+      } else {
+        console.error("[Contact] Failed to send email:", emailResult.error)
+      }
+
+      // In production, you would also:
+      // 1. Send confirmation email to user
+      // 2. Integrate with CRM (HubSpot, Pipedrive, etc.)
+      // 3. Track event in analytics
+
+      return NextResponse.json(
+        {
+          success: true,
+          message: "Message received. We'll get back to you soon.",
+          submissionId: data.id,
+        },
+        { status: 201 },
+      )
+    } else {
+      // Fallback when database is not configured
+      console.log("[Contact] Form submission (no database):", { name, email, subject })
+      
+      return NextResponse.json(
+        {
+          success: true,
+          message: "Message received. We'll get back to you soon.",
+          submissionId: Date.now().toString(),
+        },
+        { status: 201 },
+      )
     }
-    contactSubmissions.push(submission)
-
-    console.log("[v0] Contact form submission:", submission)
-
-    // In production, you would:
-    // 1. Save to database (Supabase, Neon, etc.)
-    // 2. Send email to info@amasstechhub.com via SendGrid, Resend, or Mailgun
-    // 3. Send confirmation email to user
-    // 4. Integrate with CRM (HubSpot, Pipedrive, etc.)
-    // 5. Track event in analytics
-
-    return NextResponse.json(
-      {
-        success: true,
-        message: "Message received. We'll get back to you soon.",
-        submissionId: submission.id,
-      },
-      { status: 201 },
-    )
   } catch (error) {
     console.error("Contact form error:", error)
     return NextResponse.json({ error: "Internal server error" }, { status: 500 })

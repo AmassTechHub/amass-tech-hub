@@ -17,12 +17,19 @@ export async function GET(request: NextRequest) {
     const page = parseInt(searchParams.get('page') || '1')
     const limit = parseInt(searchParams.get('limit') || '10')
     const category = searchParams.get('category')
-    const published = searchParams.get('published')
+    const status = searchParams.get('status') || 'published'
+    const featured = searchParams.get('featured')
 
     let query = supabaseAdmin
       .from('articles')
       .select(`
         *,
+        categories (
+          id,
+          name,
+          slug,
+          color
+        ),
         authors (
           id,
           name,
@@ -30,26 +37,32 @@ export async function GET(request: NextRequest) {
           avatar_url
         )
       `)
-      .order('created_at', { ascending: false })
+      .order('published_at', { ascending: false })
 
     if (category && category !== 'all') {
-      query = query.eq('category', category)
+      query = query.eq('category_id', category)
     }
 
-    if (published !== null) {
-      query = query.eq('published', published === 'true')
+    if (status) {
+      query = query.eq('status', status)
+    }
+
+    if (featured !== null) {
+      query = query.eq('featured', featured === 'true')
     }
 
     const { data, error } = await query
       .range((page - 1) * limit, page * limit - 1)
 
     if (error) {
+      console.error('Database error:', error)
       // Fallback to static data if database error
       return NextResponse.json({ articles: fallbackArticles })
     }
 
-    return NextResponse.json({ articles: data })
+    return NextResponse.json({ articles: data || [] })
   } catch (error) {
+    console.error('API error:', error)
     // Fallback to static data if any error
     return NextResponse.json({ articles: fallbackArticles })
   }
@@ -59,7 +72,26 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
-    const { title, content, excerpt, category, author_id, image_url, tags, featured, published } = body
+    const { 
+      title, 
+      content, 
+      excerpt, 
+      category_id, 
+      author_id, 
+      featured_image, 
+      tags, 
+      featured, 
+      status,
+      seo_title,
+      seo_description
+    } = body
+
+    // Validate required fields
+    if (!title || !content || !excerpt || !category_id || !author_id) {
+      return NextResponse.json({ 
+        error: 'Missing required fields: title, content, excerpt, category_id, author_id' 
+      }, { status: 400 })
+    }
 
     // Generate slug from title
     const slug = title
@@ -67,29 +99,55 @@ export async function POST(request: NextRequest) {
       .replace(/[^a-z0-9]+/g, '-')
       .replace(/(^-|-$)/g, '')
 
+    // Calculate reading time (rough estimate: 200 words per minute)
+    const wordCount = content.split(/\s+/).length
+    const readingTime = Math.max(1, Math.ceil(wordCount / 200))
+
+    const articleData = {
+      title,
+      slug,
+      content,
+      excerpt,
+      category_id,
+      author_id,
+      featured_image: featured_image || null,
+      tags: tags || [],
+      featured: featured || false,
+      status: status || 'draft',
+      reading_time: readingTime,
+      seo_title: seo_title || title,
+      seo_description: seo_description || excerpt,
+      published_at: status === 'published' ? new Date().toISOString() : null
+    }
+
     const { data, error } = await supabaseAdmin
       .from('articles')
-      .insert({
-        title,
-        slug,
-        content,
-        excerpt,
-        category,
-        author_id,
-        image_url,
-        tags: tags || [],
-        featured: featured || false,
-        published: published || false
-      })
-      .select()
+      .insert(articleData)
+      .select(`
+        *,
+        categories (
+          id,
+          name,
+          slug,
+          color
+        ),
+        authors (
+          id,
+          name,
+          email,
+          avatar_url
+        )
+      `)
       .single()
 
     if (error) {
+      console.error('Database error:', error)
       return NextResponse.json({ error: error.message }, { status: 500 })
     }
 
     return NextResponse.json({ article: data }, { status: 201 })
   } catch (error) {
+    console.error('API error:', error)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
 }
