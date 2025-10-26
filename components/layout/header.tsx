@@ -43,7 +43,8 @@ export default function Header() {
                 onError={(e) => {
                   // Fallback to text logo if image fails to load
                   e.currentTarget.style.display = 'none'
-                  e.currentTarget.nextElementSibling.style.display = 'flex'
+                  const fallback = e.currentTarget.nextElementSibling as HTMLElement
+                  if (fallback) fallback.style.display = 'flex'
                 }}
               />
               <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center" style={{display: 'none'}}>

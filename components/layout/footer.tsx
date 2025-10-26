@@ -1,3 +1,5 @@
+"use client"
+
 import Link from "next/link"
 import { Linkedin, Twitter, Facebook, Instagram, Youtube } from "lucide-react"
 
@@ -25,7 +27,8 @@ export default function Footer() {
                   onError={(e) => {
                     // Fallback to text logo if image fails to load
                     e.currentTarget.style.display = 'none'
-                    e.currentTarget.nextElementSibling.style.display = 'flex'
+                    const fallback = e.currentTarget.nextElementSibling as HTMLElement
+                    if (fallback) fallback.style.display = 'flex'
                   }}
                 />
                 <div className="w-8 h-8 bg-accent rounded-lg flex items-center justify-center" style={{display: 'none'}}>
