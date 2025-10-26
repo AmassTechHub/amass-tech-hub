@@ -2,6 +2,7 @@
 
 import Link from "next/link"
 import { Linkedin, Twitter, Facebook, Instagram, Youtube } from "lucide-react"
+import Logo from "@/components/ui/logo"
 
 export default function Footer() {
   const socialLinks = [
@@ -18,24 +19,8 @@ export default function Footer() {
         <div className="grid grid-cols-1 md:grid-cols-4 gap-8 mb-8">
           {/* Brand */}
           <div>
-            <div className="flex items-center gap-2 mb-4">
-              <div className="w-8 h-8 flex items-center justify-center">
-                <img 
-                  src="/logo.png" 
-                  alt="Amass Tech Hub Logo" 
-                  className="w-8 h-8 object-contain"
-                  onError={(e) => {
-                    // Fallback to text logo if image fails to load
-                    e.currentTarget.style.display = 'none'
-                    const fallback = e.currentTarget.nextElementSibling as HTMLElement
-                    if (fallback) fallback.style.display = 'flex'
-                  }}
-                />
-                <div className="w-8 h-8 bg-accent rounded-lg flex items-center justify-center" style={{display: 'none'}}>
-                  <span className="text-primary font-bold">A</span>
-                </div>
-              </div>
-              <span className="font-bold text-lg">Amass Tech Hub</span>
+            <div className="mb-4">
+              <Logo size="md" showText={true} />
             </div>
             <p className="text-sm text-white/80">Africa's premier tech news and digital solutions hub.</p>
           </div>
