@@ -1,6 +1,14 @@
 import { Resend } from 'resend'
 
-const resend = new Resend(process.env.RESEND_API_KEY)
+// Initialize Resend lazily to avoid errors during build
+function getResend() {
+  const apiKey = process.env.RESEND_API_KEY
+  if (!apiKey) {
+    console.log('Resend API key not configured')
+    return null
+  }
+  return new Resend(apiKey)
+}
 
 export interface EmailData {
   to: string
@@ -11,7 +19,8 @@ export interface EmailData {
 
 export async function sendEmail({ to, subject, html, from = "Amass Tech Hub <noreply@amasstechhub.com>" }: EmailData) {
   try {
-    if (!process.env.RESEND_API_KEY) {
+    const resend = getResend()
+    if (!resend) {
       console.log('Email service not configured - would send:', { to, subject })
       return { success: true, message: 'Email service not configured' }
     }
