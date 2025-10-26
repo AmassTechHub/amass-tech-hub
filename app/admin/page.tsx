@@ -35,6 +35,7 @@ export default function AdminDashboard() {
     recentSubscribers: 0
   })
   const [loading, setLoading] = useState(true)
+  const [dashboardData, setDashboardData] = useState([{ month: "No Data", posts: 0, views: 0, subscribers: 0 }])
 
   useEffect(() => {
     fetchDashboardStats()
@@ -75,22 +76,46 @@ export default function AdminDashboard() {
         recentArticles,
         recentSubscribers
       })
+
+      // Compute real dashboard data from articles (last 6 months)
+      const now = new Date()
+      const months: string[] = []
+      for (let i = 5; i >= 0; i--) {
+        const date = new Date(now.getFullYear(), now.getMonth() - i, 1)
+        const monthName = date.toLocaleDateString('en-US', { month: 'short' })
+        months.push(monthName)
+      }
+
+      const chartData = months.map((month, idx) => {
+        const monthStart = new Date(now.getFullYear(), now.getMonth() - (5 - idx), 1)
+        const monthEnd = new Date(monthStart.getFullYear(), monthStart.getMonth() + 1, 0)
+        
+        const monthArticles = articles.articles.filter((article: any) => {
+          const articleDate = new Date(article.created_at)
+          return articleDate >= monthStart && articleDate <= monthEnd
+        })
+        
+        const monthViews = monthArticles.reduce((sum: number, article: any) => sum + (article.views || 0), 0)
+        const monthSubscribers = subscribers.subscribers.filter((sub: any) => {
+          const subDate = new Date(sub.subscribed_at)
+          return subDate >= monthStart && subDate <= monthEnd
+        }).length
+
+        return {
+          month,
+          posts: monthArticles.length,
+          views: monthViews,
+          subscribers: monthSubscribers
+        }
+      })
+
+      setDashboardData(chartData.length > 0 ? chartData : [{ month: "No Data", posts: 0, views: 0, subscribers: 0 }])
     } catch (error) {
       console.error('Error fetching dashboard stats:', error)
     } finally {
       setLoading(false)
     }
   }
-
-  // Mock data for charts (in a real app, you'd fetch this from analytics)
-  const dashboardData = [
-    { month: "Jan", posts: 12, views: 4000, subscribers: 240 },
-    { month: "Feb", posts: 19, views: 3000, subscribers: 221 },
-    { month: "Mar", posts: 15, views: 2000, subscribers: 229 },
-    { month: "Apr", posts: 22, views: 2780, subscribers: 200 },
-    { month: "May", posts: 18, views: 1890, subscribers: 250 },
-    { month: "Jun", posts: 25, views: 2390, subscribers: 290 },
-  ]
 
   if (loading) {
     return (
