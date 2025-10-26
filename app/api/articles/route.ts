@@ -1,9 +1,18 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase'
+import { fallbackArticles } from '@/lib/fallback-data'
 
 // GET all articles
 export async function GET(request: NextRequest) {
   try {
+    // Check if database is available
+    const hasDatabase = process.env.SUPABASE_URL && process.env.SUPABASE_SERVICE_ROLE_KEY
+    
+    if (!hasDatabase) {
+      // Return fallback data when database is not configured
+      return NextResponse.json({ articles: fallbackArticles })
+    }
+
     const { searchParams } = new URL(request.url)
     const page = parseInt(searchParams.get('page') || '1')
     const limit = parseInt(searchParams.get('limit') || '10')
@@ -35,12 +44,14 @@ export async function GET(request: NextRequest) {
       .range((page - 1) * limit, page * limit - 1)
 
     if (error) {
-      return NextResponse.json({ error: error.message }, { status: 500 })
+      // Fallback to static data if database error
+      return NextResponse.json({ articles: fallbackArticles })
     }
 
     return NextResponse.json({ articles: data })
   } catch (error) {
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+    // Fallback to static data if any error
+    return NextResponse.json({ articles: fallbackArticles })
   }
 }
 

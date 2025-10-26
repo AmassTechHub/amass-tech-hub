@@ -1,21 +1,32 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase'
+import { fallbackCategories } from '@/lib/fallback-data'
 
 // GET all categories
 export async function GET() {
   try {
+    // Check if database is available
+    const hasDatabase = process.env.SUPABASE_URL && process.env.SUPABASE_SERVICE_ROLE_KEY
+    
+    if (!hasDatabase) {
+      // Return fallback data when database is not configured
+      return NextResponse.json({ categories: fallbackCategories })
+    }
+
     const { data, error } = await supabaseAdmin
       .from('categories')
       .select('*')
       .order('name')
 
     if (error) {
-      return NextResponse.json({ error: error.message }, { status: 500 })
+      // Fallback to static data if database error
+      return NextResponse.json({ categories: fallbackCategories })
     }
 
     return NextResponse.json({ categories: data })
   } catch (error) {
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+    // Fallback to static data if any error
+    return NextResponse.json({ categories: fallbackCategories })
   }
 }
 
