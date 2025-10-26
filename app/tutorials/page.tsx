@@ -1,85 +1,67 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Search, Filter, Clock, Zap } from "lucide-react"
 import Link from "next/link"
+import { getTutorials, searchTutorials, type Tutorial } from "@/lib/content-management"
 
 export default function TutorialsPage() {
   const [searchTerm, setSearchTerm] = useState("")
   const [selectedLevel, setSelectedLevel] = useState("all")
+  const [tutorials, setTutorials] = useState<Tutorial[]>([])
+  const [loading, setLoading] = useState(true)
 
-  const levels = ["all", "Beginner", "Intermediate", "Advanced"]
+  const levels = ["all", "beginner", "intermediate", "advanced"]
 
-  const tutorials = [
-    {
-      id: 1,
-      title: "Getting Started with React Hooks",
-      excerpt: "Learn the fundamentals of React Hooks and how to use them in your projects",
-      level: "Beginner",
-      duration: "45 min",
-      author: "Sarah Okonkwo",
-      date: "Oct 20, 2025",
-      image: "/react-hooks-javascript.jpg",
-    },
-    {
-      id: 2,
-      title: "Building Scalable Node.js Applications",
-      excerpt: "Best practices for building production-ready Node.js applications",
-      level: "Advanced",
-      duration: "2 hours",
-      author: "James Mwangi",
-      date: "Oct 19, 2025",
-      image: "/nodejs-backend-development.jpg",
-    },
-    {
-      id: 3,
-      title: "CSS Grid Layout Mastery",
-      excerpt: "Master CSS Grid for creating complex responsive layouts",
-      level: "Intermediate",
-      duration: "1.5 hours",
-      author: "Amara Obi",
-      date: "Oct 18, 2025",
-      image: "/css-grid-layout.png",
-    },
-    {
-      id: 4,
-      title: "Introduction to TypeScript",
-      excerpt: "Get started with TypeScript and improve your JavaScript development",
-      level: "Beginner",
-      duration: "1 hour",
-      author: "David Kipchoge",
-      date: "Oct 17, 2025",
-      image: "/typescript-programming.png",
-    },
-    {
-      id: 5,
-      title: "Advanced Python Data Analysis",
-      excerpt: "Deep dive into pandas, numpy, and data visualization techniques",
-      level: "Advanced",
-      duration: "3 hours",
-      author: "Sarah Okonkwo",
-      date: "Oct 16, 2025",
-      image: "/python-data-analysis.png",
-    },
-    {
-      id: 6,
-      title: "Docker Containerization Basics",
-      excerpt: "Learn Docker and containerize your applications for deployment",
-      level: "Intermediate",
-      duration: "1.5 hours",
-      author: "James Mwangi",
-      date: "Oct 15, 2025",
-      image: "/docker-containers.jpg",
-    },
-  ]
+  useEffect(() => {
+    async function loadTutorials() {
+      try {
+        const tutorialsData = await getTutorials()
+        setTutorials(tutorialsData)
+      } catch (error) {
+        console.error('Error loading tutorials:', error)
+      } finally {
+        setLoading(false)
+      }
+    }
+    loadTutorials()
+  }, [])
+
+  useEffect(() => {
+    async function searchTutorialsData() {
+      if (searchTerm.trim()) {
+        try {
+          const searchResults = await searchTutorials(searchTerm)
+          setTutorials(searchResults)
+        } catch (error) {
+          console.error('Error searching tutorials:', error)
+        }
+      } else {
+        // Reload all tutorials when search is cleared
+        try {
+          const tutorialsData = await getTutorials()
+          setTutorials(tutorialsData)
+        } catch (error) {
+          console.error('Error loading tutorials:', error)
+        }
+      }
+    }
+    searchTutorialsData()
+  }, [searchTerm])
 
   const filteredTutorials = tutorials.filter((tutorial) => {
-    const matchesSearch =
-      tutorial.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      tutorial.excerpt.toLowerCase().includes(searchTerm.toLowerCase())
     const matchesLevel = selectedLevel === "all" || tutorial.level === selectedLevel
-    return matchesSearch && matchesLevel
+    return matchesLevel
   })
+
+  const formatDuration = (minutes: number) => {
+    if (minutes < 60) {
+      return `${minutes} min`
+    }
+    const hours = Math.floor(minutes / 60)
+    const remainingMinutes = minutes % 60
+    return remainingMinutes > 0 ? `${hours}h ${remainingMinutes}m` : `${hours}h`
+  }
 
   return (
     <div className="min-h-screen bg-background">
@@ -126,21 +108,26 @@ export default function TutorialsPage() {
       {/* Tutorials Grid */}
       <section className="py-12 md:py-16">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          {filteredTutorials.length > 0 ? (
+          {loading ? (
+            <div className="text-center py-12">
+              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
+              <p className="text-muted-foreground">Loading tutorials...</p>
+            </div>
+          ) : filteredTutorials.length > 0 ? (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {filteredTutorials.map((tutorial) => (
                 <Link
                   key={tutorial.id}
-                  href={`/tutorials/${tutorial.id}`}
+                  href={`/tutorials/${tutorial.slug}`}
                   className="group flex flex-col h-full bg-card rounded-lg border border-border hover:border-primary hover:shadow-lg transition-all overflow-hidden"
                 >
                   <div className="relative h-48 overflow-hidden bg-muted">
                     <img
-                      src={tutorial.image || "/placeholder.svg"}
+                      src={tutorial.featured_image || "/placeholder.svg"}
                       alt={tutorial.title}
                       className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                     />
-                    <div className="absolute top-3 right-3 px-3 py-1 bg-accent text-accent-foreground text-xs font-semibold rounded-full">
+                    <div className="absolute top-3 right-3 px-3 py-1 bg-accent text-accent-foreground text-xs font-semibold rounded-full capitalize">
                       {tutorial.level}
                     </div>
                   </div>
@@ -152,11 +139,11 @@ export default function TutorialsPage() {
                     <div className="flex items-center gap-4 text-xs text-muted-foreground pt-4 border-t border-border">
                       <div className="flex items-center gap-1">
                         <Clock size={14} />
-                        {tutorial.duration}
+                        {formatDuration(tutorial.duration)}
                       </div>
                       <div className="flex items-center gap-1">
                         <Zap size={14} />
-                        {tutorial.author}
+                        {tutorial.author.name}
                       </div>
                     </div>
                   </div>

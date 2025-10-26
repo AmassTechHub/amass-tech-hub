@@ -1,77 +1,56 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Search, Filter, ExternalLink, Star } from "lucide-react"
+import { getTools, searchTools, type Tool } from "@/lib/content-management"
 
 export default function ToolsPage() {
   const [searchTerm, setSearchTerm] = useState("")
   const [selectedCategory, setSelectedCategory] = useState("all")
+  const [tools, setTools] = useState<Tool[]>([])
+  const [loading, setLoading] = useState(true)
 
   const categories = ["all", "Development", "Design", "Productivity", "Analytics", "Security"]
 
-  const tools = [
-    {
-      id: 1,
-      name: "VS Code",
-      category: "Development",
-      description: "Lightweight but powerful code editor with extensive plugin ecosystem",
-      rating: 4.9,
-      url: "https://code.visualstudio.com",
-      image: "/vs-code-editor.jpg",
-    },
-    {
-      id: 2,
-      name: "Figma",
-      category: "Design",
-      description: "Collaborative design tool for UI/UX design and prototyping",
-      rating: 4.8,
-      url: "https://figma.com",
-      image: "/figma-design-interface.png",
-    },
-    {
-      id: 3,
-      name: "Notion",
-      category: "Productivity",
-      description: "All-in-one workspace for notes, databases, and project management",
-      rating: 4.7,
-      url: "https://notion.so",
-      image: "/notion-workspace.png",
-    },
-    {
-      id: 4,
-      name: "GitHub",
-      category: "Development",
-      description: "Version control and collaboration platform for developers",
-      rating: 4.9,
-      url: "https://github.com",
-      image: "/github-version-control.jpg",
-    },
-    {
-      id: 5,
-      name: "Google Analytics",
-      category: "Analytics",
-      description: "Web analytics platform for tracking website performance and user behavior",
-      rating: 4.6,
-      url: "https://analytics.google.com",
-      image: "/google-analytics-dashboard.png",
-    },
-    {
-      id: 6,
-      name: "1Password",
-      category: "Security",
-      description: "Password manager and digital vault for secure credential storage",
-      rating: 4.8,
-      url: "https://1password.com",
-      image: "/password-manager-security.png",
-    },
-  ]
+  useEffect(() => {
+    async function loadTools() {
+      try {
+        const toolsData = await getTools()
+        setTools(toolsData)
+      } catch (error) {
+        console.error('Error loading tools:', error)
+      } finally {
+        setLoading(false)
+      }
+    }
+    loadTools()
+  }, [])
+
+  useEffect(() => {
+    async function searchToolsData() {
+      if (searchTerm.trim()) {
+        try {
+          const searchResults = await searchTools(searchTerm)
+          setTools(searchResults)
+        } catch (error) {
+          console.error('Error searching tools:', error)
+        }
+      } else {
+        // Reload all tools when search is cleared
+        try {
+          const toolsData = await getTools()
+          setTools(toolsData)
+        } catch (error) {
+          console.error('Error loading tools:', error)
+        }
+      }
+    }
+    searchToolsData()
+  }, [searchTerm])
 
   const filteredTools = tools.filter((tool) => {
-    const matchesSearch =
-      tool.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      tool.description.toLowerCase().includes(searchTerm.toLowerCase())
     const matchesCategory = selectedCategory === "all" || tool.category === selectedCategory
-    return matchesSearch && matchesCategory
+    return matchesCategory
   })
 
   return (
@@ -119,7 +98,12 @@ export default function ToolsPage() {
       {/* Tools Grid */}
       <section className="py-12 md:py-16">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          {filteredTools.length > 0 ? (
+          {loading ? (
+            <div className="text-center py-12">
+              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
+              <p className="text-muted-foreground">Loading tools...</p>
+            </div>
+          ) : filteredTools.length > 0 ? (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {filteredTools.map((tool) => (
                 <div
@@ -128,10 +112,15 @@ export default function ToolsPage() {
                 >
                   <div className="relative h-48 overflow-hidden bg-muted">
                     <img
-                      src={tool.image || "/placeholder.svg"}
+                      src={tool.logo_url || "/placeholder.svg"}
                       alt={tool.name}
                       className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                     />
+                    {tool.featured && (
+                      <div className="absolute top-3 left-3 bg-accent text-accent-foreground px-2 py-1 rounded text-xs font-semibold">
+                        Featured
+                      </div>
+                    )}
                   </div>
                   <div className="flex-1 p-4 flex flex-col">
                     <span className="inline-block w-fit px-2 py-1 bg-primary/10 text-primary text-xs font-semibold rounded mb-2">
@@ -151,9 +140,10 @@ export default function ToolsPage() {
                           />
                         ))}
                         <span className="text-xs font-semibold text-foreground ml-1">{tool.rating}</span>
+                        <span className="text-xs text-muted-foreground ml-1">({tool.review_count})</span>
                       </div>
                       <a
-                        href={tool.url}
+                        href={tool.website_url}
                         target="_blank"
                         rel="noopener noreferrer"
                         className="p-2 hover:bg-primary/10 rounded-lg transition-colors"
