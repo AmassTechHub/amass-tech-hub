@@ -42,36 +42,36 @@ export default function NewsGrid() {
   ]
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
       {articles.map((article) => (
         <Link
           key={article.id}
           href={`/news/${article.id}`}
           className="group flex flex-col h-full bg-card rounded-lg border border-border hover:border-primary hover:shadow-lg transition-all overflow-hidden"
         >
-          <div className="relative h-48 overflow-hidden bg-muted">
+          <div className="relative h-40 sm:h-48 overflow-hidden bg-muted">
             <img
               src={article.image || "/placeholder.svg"}
               alt={article.title}
               className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
             />
           </div>
-          <div className="flex-1 p-4 flex flex-col">
-            <span className="inline-block w-fit px-2 py-1 bg-primary/10 text-primary text-xs font-semibold rounded mb-3">
+          <div className="flex-1 p-3 sm:p-4 flex flex-col">
+            <span className="inline-block w-fit px-2 py-1 bg-primary/10 text-primary text-xs font-semibold rounded mb-2 sm:mb-3">
               {article.category}
             </span>
-            <h3 className="font-bold text-foreground mb-2 line-clamp-2 group-hover:text-primary transition-colors">
+            <h3 className="font-bold text-foreground mb-2 line-clamp-2 group-hover:text-primary transition-colors text-sm sm:text-base leading-tight">
               {article.title}
             </h3>
-            <p className="text-muted-foreground text-sm mb-4 line-clamp-2 flex-1">{article.excerpt}</p>
-            <div className="flex items-center gap-4 text-xs text-muted-foreground pt-4 border-t border-border">
+            <p className="text-muted-foreground text-xs sm:text-sm mb-3 sm:mb-4 line-clamp-2 flex-1 leading-relaxed">{article.excerpt}</p>
+            <div className="flex items-center gap-2 sm:gap-4 text-xs text-muted-foreground pt-3 sm:pt-4 border-t border-border">
               <div className="flex items-center gap-1">
-                <User size={14} />
-                {article.author}
+                <User size={12} className="sm:w-3.5 sm:h-3.5" />
+                <span className="truncate">{article.author}</span>
               </div>
               <div className="flex items-center gap-1">
-                <Calendar size={14} />
-                {article.date}
+                <Calendar size={12} className="sm:w-3.5 sm:h-3.5" />
+                <span className="truncate">{article.date}</span>
               </div>
             </div>
           </div>

@@ -1,90 +1,60 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Search, Filter } from "lucide-react"
 import NewsCard from "@/components/news/news-card"
+import { getRealArticles, getRealCategories, searchRealArticles, type RealArticle, type RealCategory } from "@/lib/real-content"
 
 export default function NewsPage() {
   const [searchTerm, setSearchTerm] = useState("")
   const [selectedCategory, setSelectedCategory] = useState("all")
+  const [articles, setArticles] = useState<RealArticle[]>([])
+  const [categories, setCategories] = useState<RealCategory[]>([])
+  const [loading, setLoading] = useState(true)
 
-  const categories = ["all", "Startup News", "Infrastructure", "AI & Tech", "Security", "Fintech", "Cloud"]
+  useEffect(() => {
+    async function loadData() {
+      try {
+        const [articlesData, categoriesData] = await Promise.all([
+          getRealArticles(),
+          getRealCategories()
+        ])
+        setArticles(articlesData)
+        setCategories(categoriesData)
+      } catch (error) {
+        console.error('Error loading data:', error)
+      } finally {
+        setLoading(false)
+      }
+    }
+    loadData()
+  }, [])
 
-  const allNews = [
-    {
-      id: 1,
-      title: "African Tech Startups Raise Record $2.5B in 2024",
-      excerpt: "Investment in African tech ecosystem reaches all-time high, signaling strong growth potential",
-      category: "Startup News",
-      date: "Oct 20, 2025",
-      author: "Sarah Okonkwo",
-      image: "/african-tech-startup-funding.jpg",
-      content:
-        "The African tech startup ecosystem has reached a significant milestone with total investments hitting $2.5 billion in 2024. This represents a 40% increase from the previous year, demonstrating growing confidence from global and local investors in African innovation.",
-    },
-    {
-      id: 2,
-      title: "5G Rollout Accelerates Across Major African Cities",
-      excerpt: "Telecommunications companies announce aggressive expansion plans for next-generation connectivity",
-      category: "Infrastructure",
-      date: "Oct 18, 2025",
-      author: "James Mwangi",
-      image: "/5g-network-infrastructure.jpg",
-      content:
-        "Major telecommunications providers across Africa are accelerating their 5G network deployments. By the end of 2025, over 50 major cities are expected to have 5G coverage, transforming mobile connectivity and enabling new applications.",
-    },
-    {
-      id: 3,
-      title: "AI Integration in African Healthcare: Opportunities and Challenges",
-      excerpt: "Exploring how artificial intelligence is transforming medical services across the continent",
-      category: "AI & Tech",
-      date: "Oct 19, 2025",
-      author: "Amara Obi",
-      image: "/ai-healthcare-africa.jpg",
-      content:
-        "Artificial intelligence is revolutionizing healthcare delivery in Africa. From diagnostic imaging to drug discovery, AI applications are improving patient outcomes while addressing the continent's healthcare challenges.",
-    },
-    {
-      id: 4,
-      title: "Cybersecurity Best Practices for African Businesses",
-      excerpt: "Essential security measures every organization should implement in 2025",
-      category: "Security",
-      date: "Oct 17, 2025",
-      author: "David Kipchoge",
-      image: "/cybersecurity-business.jpg",
-      content:
-        "As cyber threats evolve, African businesses must adopt comprehensive security strategies. This includes employee training, regular security audits, and implementation of zero-trust architecture.",
-    },
-    {
-      id: 5,
-      title: "The Rise of Fintech in East Africa",
-      excerpt: "How digital financial services are revolutionizing banking and payments",
-      category: "Fintech",
-      date: "Oct 16, 2025",
-      author: "Sarah Okonkwo",
-      image: "/fintech-mobile-money.png",
-      content:
-        "East Africa continues to lead the continent in fintech innovation. Mobile money services, digital lending platforms, and blockchain-based solutions are providing financial inclusion to millions.",
-    },
-    {
-      id: 6,
-      title: "Cloud Computing Adoption Trends in 2025",
-      excerpt: "African enterprises increasingly migrate to cloud infrastructure for scalability",
-      category: "Cloud",
-      date: "Oct 15, 2025",
-      author: "James Mwangi",
-      image: "/cloud-computing-datacenter.png",
-      content:
-        "Cloud adoption among African enterprises is accelerating, with companies recognizing the benefits of scalability, cost efficiency, and global accessibility. Major cloud providers are expanding their African data centers.",
-    },
-  ]
+  useEffect(() => {
+    async function searchArticles() {
+      if (searchTerm.trim()) {
+        try {
+          const searchResults = await searchRealArticles(searchTerm)
+          setArticles(searchResults)
+        } catch (error) {
+          console.error('Error searching articles:', error)
+        }
+      } else {
+        // Reload all articles when search is cleared
+        try {
+          const articlesData = await getRealArticles()
+          setArticles(articlesData)
+        } catch (error) {
+          console.error('Error loading articles:', error)
+        }
+      }
+    }
+    searchArticles()
+  }, [searchTerm])
 
-  const filteredNews = allNews.filter((article) => {
-    const matchesSearch =
-      article.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      article.excerpt.toLowerCase().includes(searchTerm.toLowerCase())
-    const matchesCategory = selectedCategory === "all" || article.category === selectedCategory
-    return matchesSearch && matchesCategory
+  const filteredNews = articles.filter((article) => {
+    const matchesCategory = selectedCategory === "all" || article.category.slug === selectedCategory
+    return matchesCategory
   })
 
   return (
@@ -121,9 +91,10 @@ export default function NewsPage() {
                 onChange={(e) => setSelectedCategory(e.target.value)}
                 className="px-4 py-2 rounded-lg bg-background border border-border focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"
               >
+                <option value="all">All Categories</option>
                 {categories.map((cat) => (
-                  <option key={cat} value={cat}>
-                    {cat === "all" ? "All Categories" : cat}
+                  <option key={cat.slug} value={cat.slug}>
+                    {cat.name}
                   </option>
                 ))}
               </select>
@@ -135,7 +106,12 @@ export default function NewsPage() {
       {/* News Grid */}
       <section className="py-12 md:py-16">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          {filteredNews.length > 0 ? (
+          {loading ? (
+            <div className="text-center py-12">
+              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
+              <p className="text-muted-foreground">Loading articles...</p>
+            </div>
+          ) : filteredNews.length > 0 ? (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {filteredNews.map((article) => (
                 <NewsCard key={article.id} article={article} />
