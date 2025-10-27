@@ -6,20 +6,13 @@ import { useRouter } from "next/navigation"
 import AdminSidebar from "@/components/admin/sidebar"
 import AdminHeader from "@/components/admin/header"
 
-export default function AdminLayout({
-  children,
-}: {
-  children: React.ReactNode
-}) {
+export default function AdminLayout({ children }: { children: React.ReactNode }) {
   const { data: session, status } = useSession()
   const router = useRouter()
 
   useEffect(() => {
     if (status === "loading") return
-    
-    if (status === "unauthenticated") {
-      router.push("/auth/login?callbackUrl=/admin")
-    }
+    if (status === "unauthenticated") router.push("/auth/login?callbackUrl=/admin")
   }, [status, router])
 
   if (status === "loading") {
@@ -30,9 +23,7 @@ export default function AdminLayout({
     )
   }
 
-  if (!session) {
-    return null
-  }
+  if (!session) return null
 
   return (
     <div className="flex h-screen bg-background">
