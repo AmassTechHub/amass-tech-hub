@@ -3,7 +3,7 @@
 import type React from "react"
 
 import { useState } from "react"
-import { useAuth } from "@/lib/auth-context"
+import { useSession } from "next-auth/react"
 import type { Comment } from "@/lib/types"
 
 interface CommentsSectionProps {
@@ -12,7 +12,8 @@ interface CommentsSectionProps {
 }
 
 export default function CommentsSection({ articleId, comments: initialComments }: CommentsSectionProps) {
-  const { user } = useAuth()
+  const { data: session } = useSession()
+  const user = session?.user
   const [comments, setComments] = useState<Comment[]>(initialComments)
   const [newComment, setNewComment] = useState("")
   const [loading, setLoading] = useState(false)
