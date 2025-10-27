@@ -13,7 +13,7 @@ interface Article {
   categories: {
     name: string
     color: string
-  }
+  }[]
   authors: {
     name: string
   }
@@ -95,11 +95,11 @@ export default function NewsGrid() {
                 <span 
                   className="px-2 py-1 text-xs font-semibold rounded-full"
                   style={{ 
-                    backgroundColor: article.categories?.color ? `${article.categories.color}20` : '#3c0a6b20', 
-                    color: article.categories?.color || '#3c0a6b'
+                    backgroundColor: (article.categories && article.categories.length > 0 && article.categories[0]?.color) ? `${article.categories[0].color}20` : '#3c0a6b20', 
+                    color: (article.categories && article.categories.length > 0 && article.categories[0]?.color) || '#3c0a6b'
                   }}
                 >
-                  {article.categories?.name || 'Uncategorized'}
+                  {(article.categories && article.categories.length > 0 && article.categories[0]?.name) || 'Uncategorized'}
             </span>
                 <div className="flex items-center gap-1 text-xs text-muted-foreground">
                   <Calendar size={12} />

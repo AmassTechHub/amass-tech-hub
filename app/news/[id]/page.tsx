@@ -83,7 +83,7 @@ export default async function NewsDetailPage({ params }: { params: { id: string 
               "@type": "WebPage",
               "@id": `https://www.amasstechhub.com/news/${article.slug}`,
             },
-            articleSection: article.categories.name,
+            articleSection: (article.categories && article.categories.length > 0 && article.categories[0]?.name) || 'General',
             keywords: article.tags.join(", "),
             wordCount: article.content.split(" ").length,
             timeRequired: `PT${article.reading_time}M`,
@@ -103,11 +103,11 @@ export default async function NewsDetailPage({ params }: { params: { id: string 
             <span 
               className="px-3 py-1 text-sm font-semibold rounded-full"
               style={{ 
-                backgroundColor: article.categories?.color ? `${article.categories.color}20` : '#3c0a6b20', 
-                color: article.categories?.color || '#3c0a6b'
+                backgroundColor: (article.categories && article.categories.length > 0 && article.categories[0]?.color) ? `${article.categories[0].color}20` : '#3c0a6b20', 
+                color: (article.categories && article.categories.length > 0 && article.categories[0]?.color) || '#3c0a6b'
               }}
             >
-              {article.categories?.name || 'Uncategorized'}
+              {(article.categories && article.categories.length > 0 && article.categories[0]?.name) || 'Uncategorized'}
             </span>
             <div className="flex items-center gap-2">
               <Calendar size={18} />

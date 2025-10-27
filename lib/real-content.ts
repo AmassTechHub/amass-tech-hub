@@ -13,7 +13,7 @@ export interface RealArticle {
     name: string
     slug: string
     color: string
-  }
+  }[]
   authors: {
     id: string
     name: string

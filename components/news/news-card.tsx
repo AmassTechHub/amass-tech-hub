@@ -36,11 +36,11 @@ export default function NewsCard({ article }: NewsCardProps) {
         <span 
           className="inline-block w-fit px-2 py-1 text-xs font-semibold rounded mb-3"
           style={{ 
-            backgroundColor: article.categories?.color ? `${article.categories.color}20` : '#3c0a6b20', 
-            color: article.categories?.color || '#3c0a6b'
+            backgroundColor: (article.categories && article.categories.length > 0 && article.categories[0]?.color) ? `${article.categories[0].color}20` : '#3c0a6b20', 
+            color: (article.categories && article.categories.length > 0 && article.categories[0]?.color) || '#3c0a6b'
           }}
         >
-          {article.categories?.name || 'Uncategorized'}
+          {(article.categories && article.categories.length > 0 && article.categories[0]?.name) || 'Uncategorized'}
         </span>
         <h3 className="font-bold text-foreground mb-2 line-clamp-2 group-hover:text-primary transition-colors">
           {article.title}

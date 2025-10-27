@@ -53,7 +53,7 @@ export default function NewsPage() {
   }, [searchTerm])
 
   const filteredNews = articles.filter((article) => {
-    const matchesCategory = selectedCategory === "all" || article.categories.slug === selectedCategory
+    const matchesCategory = selectedCategory === "all" || (article.categories && article.categories.length > 0 && article.categories[0]?.slug === selectedCategory)
     return matchesCategory
   })
 

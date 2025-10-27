@@ -12,7 +12,7 @@ interface Article {
   categories: {
     name: string
     color: string
-  }
+  }[]
   authors: {
     name: string
   }
@@ -90,11 +90,11 @@ export default function FeaturedNews() {
                 <span 
                   className="px-3 py-1 text-xs font-semibold rounded-full"
                   style={{ 
-                    backgroundColor: article.categories?.color ? `${article.categories.color}20` : '#3c0a6b20', 
-                    color: article.categories?.color || '#3c0a6b'
+                    backgroundColor: (article.categories && article.categories.length > 0 && article.categories[0]?.color) ? `${article.categories[0].color}20` : '#3c0a6b20', 
+                    color: (article.categories && article.categories.length > 0 && article.categories[0]?.color) || '#3c0a6b'
                   }}
                 >
-                  {article.categories?.name || 'Uncategorized'}
+                  {(article.categories && article.categories.length > 0 && article.categories[0]?.name) || 'Uncategorized'}
                 </span>
                 <span className="text-sm text-white/80">
                   {formatDate(article.published_at || article.created_at)}
