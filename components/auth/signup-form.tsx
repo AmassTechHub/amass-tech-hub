@@ -1,9 +1,7 @@
 "use client"
 
 import type React from "react"
-
 import { useState } from "react"
-import { useAuth } from "@/lib/auth-context"
 import { useRouter } from "next/navigation"
 
 export default function SignupForm() {
@@ -12,7 +10,6 @@ export default function SignupForm() {
   const [password, setPassword] = useState("")
   const [error, setError] = useState("")
   const [loading, setLoading] = useState(false)
-  const { signup } = useAuth()
   const router = useRouter()
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -21,8 +18,8 @@ export default function SignupForm() {
     setLoading(true)
 
     try {
-      await signup(email, name, password)
-      router.push("/dashboard")
+      // Signup - redirect to login
+      router.push("/auth/login")
     } catch (err) {
       setError("Signup failed. Please try again.")
     } finally {
@@ -46,7 +43,7 @@ export default function SignupForm() {
         <label className="block text-sm font-medium mb-2">Email</label>
         <input
           type="email"
-          value={email}
+ Cent value={email}
           onChange={(e) => setEmail(e.target.value)}
           className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-600"
           required
