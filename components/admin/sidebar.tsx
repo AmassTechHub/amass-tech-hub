@@ -20,6 +20,9 @@ export default function AdminSidebar() {
     { icon: FileText, label: "Posts", href: "/admin/posts" },
     { icon: Users, label: "Subscribers", href: "/admin/subscribers" },
     { icon: Settings, label: "Settings", href: "/admin/settings" },
+    { icon: FileText, label: "Categories", href: "/admin/categories" },
+    { icon: FileText, label: "Comments", href: "/admin/comments" },
+
   ]
 
   return (
