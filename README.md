@@ -34,7 +34,7 @@ npm install
 # Required
 RESEND_API_KEY=re_your_api_key_here
 ADMIN_PASSWORD=your_secure_password
-ADMIN_EMAIL=admin@amasstechhub.com
+ADMIN_EMAIL=****.com
 
 # Optional
 NEXT_PUBLIC_GA_ID=G-XXXXXXXXXX
