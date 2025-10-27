@@ -1,6 +1,6 @@
 "use client"
 
-import { useAuth } from "@/lib/auth-context"
+import { useSession } from "next-auth/react"
 import { useState } from "react"
 
 interface SaveArticleProps {
@@ -9,8 +9,9 @@ interface SaveArticleProps {
 }
 
 export default function SaveArticle({ articleId, articleTitle }: SaveArticleProps) {
-  const { user, updatePreferences } = useAuth()
-  const [isSaved, setIsSaved] = useState(user?.preferences.savedArticles.includes(articleId) || false)
+  const { data: session } = useSession()
+  const user = session?.user
+  const [isSaved, setIsSaved] = useState(false)
   const [loading, setLoading] = useState(false)
 
   const handleSave = async () => {

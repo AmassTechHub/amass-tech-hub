@@ -3,10 +3,11 @@
 import type React from "react"
 
 import { useState } from "react"
-import { useAuth } from "@/lib/auth-context"
+import { useSession } from "next-auth/react"
 
 export default function GuestPostForm() {
-  const { user } = useAuth()
+  const { data: session } = useSession()
+  const user = session?.user
   const [formData, setFormData] = useState({
     title: "",
     excerpt: "",

@@ -1,13 +1,13 @@
 "use client"
 
 import Link from "next/link"
-import { useAuth } from "@/lib/auth-context"
+import { useSession } from "next-auth/react"
 import { Lightbulb } from "lucide-react"
 
 export default function RecommendedSection() {
-  const { user } = useAuth()
+  const { data: session } = useSession()
 
-  if (!user) {
+  if (!session?.user) {
     return null
   }
 
