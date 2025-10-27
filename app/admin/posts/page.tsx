@@ -167,11 +167,11 @@ export default function PostsPage() {
                         <span 
                           className="px-2 py-1 rounded text-xs font-medium"
                           style={{ 
-                            backgroundColor: `${post.categories.color}20`, 
-                            color: post.categories.color 
+                            backgroundColor: post.categories?.color ? `${post.categories.color}20` : '#3c0a6b20', 
+                            color: post.categories?.color || '#3c0a6b'
                           }}
                         >
-                          {post.categories.name}
+                          {post.categories?.name || 'Uncategorized'}
                         </span>
                       ) : (
                         <span className="text-muted-foreground">No category</span>

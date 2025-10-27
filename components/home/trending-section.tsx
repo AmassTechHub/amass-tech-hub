@@ -86,7 +86,7 @@ export default function TrendingSection() {
               <p className="font-semibold text-foreground dark:text-white mb-2">{category.name}</p>
               <div 
                 className="w-3 h-3 rounded-full mx-auto"
-                style={{ backgroundColor: category.color }}
+                style={{ backgroundColor: category?.color || '#3c0a6b' }}
               ></div>
             </Link>
           ))}
