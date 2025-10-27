@@ -17,7 +17,7 @@ export const authOptions = {
         }
 
         // Simple admin authentication - in production, use proper password hashing
-        const adminEmail = process.env.ADMIN_EMAIL || "info@amasstechhub.com"
+        const adminEmail = process.env.ADMIN_EMAIL || "admin@amasstechhub.com"
         const adminPassword = process.env.ADMIN_PASSWORD || "AmassTech2024!"
 
         if (credentials.email === adminEmail && credentials.password === adminPassword) {
