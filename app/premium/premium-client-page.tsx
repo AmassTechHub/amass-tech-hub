@@ -71,7 +71,7 @@ export default function PremiumClientPage() {
     }
 
     if (plan === "Enterprise") {
-      window.location.href = "mailto:sales@amasstechhub.com?subject=Enterprise%20Plan%20Inquiry"
+      window.location.href = "mailto:business@amasstechhub.com?subject=Enterprise%20Plan%20Inquiry"
     } else {
       // TODO: Integrate with Stripe or payment provider
       alert(`Upgrading to ${plan} plan...`)
