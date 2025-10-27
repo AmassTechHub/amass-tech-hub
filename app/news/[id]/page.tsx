@@ -103,11 +103,11 @@ export default async function NewsDetailPage({ params }: { params: { id: string 
             <span 
               className="px-3 py-1 text-sm font-semibold rounded-full"
               style={{ 
-                backgroundColor: `${article.categories.color}20`, 
-                color: article.categories.color 
+                backgroundColor: article.categories?.color ? `${article.categories.color}20` : '#3c0a6b20', 
+                color: article.categories?.color || '#3c0a6b'
               }}
             >
-              {article.categories.name}
+              {article.categories?.name || 'Uncategorized'}
             </span>
             <div className="flex items-center gap-2">
               <Calendar size={18} />

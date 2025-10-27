@@ -5,8 +5,8 @@ import { supabaseAdmin } from "@/lib/supabase"
 
 export const authOptions = {
   adapter: SupabaseAdapter({
-    url: process.env.SUPABASE_URL!,
-    secret: process.env.SUPABASE_SERVICE_ROLE_KEY!,
+    url: process.env.SUPABASE_URL || 'https://placeholder.supabase.co',
+    secret: process.env.SUPABASE_SERVICE_ROLE_KEY || 'placeholder-key',
   }),
   providers: [
     CredentialsProvider({
