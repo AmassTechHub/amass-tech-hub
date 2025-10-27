@@ -30,7 +30,7 @@ export default function Logo({ className = "", showText = true, size = "md" }: L
           <img 
             src="/logo.png" 
             alt="Amass Tech Hub Logo" 
-            className={`${sizeClasses[size]} object-contain`}
+            className={`${sizeClasses[size]} object-contain brightness-0 dark:invert`}
             onError={() => setImageError(true)}
           />
         ) : (
@@ -40,7 +40,7 @@ export default function Logo({ className = "", showText = true, size = "md" }: L
         )}
       </div>
       {showText && (
-        <span className={`font-bold text-primary ${textSizes[size]} hidden sm:inline`}>
+        <span className={`font-bold text-primary dark:text-accent ${textSizes[size]} hidden sm:inline`}>
           Amass Tech Hub
         </span>
       )}
