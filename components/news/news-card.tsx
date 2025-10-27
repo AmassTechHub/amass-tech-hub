@@ -36,11 +36,11 @@ export default function NewsCard({ article }: NewsCardProps) {
         <span 
           className="inline-block w-fit px-2 py-1 text-xs font-semibold rounded mb-3"
           style={{ 
-            backgroundColor: `${article.category.color}20`, 
-            color: article.category.color 
+            backgroundColor: article.categories?.color ? `${article.categories.color}20` : '#3c0a6b20', 
+            color: article.categories?.color || '#3c0a6b'
           }}
         >
-          {article.category.name}
+          {article.categories?.name || 'Uncategorized'}
         </span>
         <h3 className="font-bold text-foreground mb-2 line-clamp-2 group-hover:text-primary transition-colors">
           {article.title}
@@ -49,7 +49,7 @@ export default function NewsCard({ article }: NewsCardProps) {
         <div className="flex items-center gap-4 text-xs text-muted-foreground pt-4 border-t border-border">
           <div className="flex items-center gap-1">
             <User size={14} />
-            {article.author.name}
+            {article.authors?.name || 'Anonymous'}
           </div>
           <div className="flex items-center gap-1">
             <Calendar size={14} />
