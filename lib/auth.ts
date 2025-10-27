@@ -4,10 +4,6 @@ import CredentialsProvider from "next-auth/providers/credentials"
 import { supabaseAdmin } from "@/lib/supabase"
 
 export const authOptions = {
-  adapter: SupabaseAdapter({
-    url: process.env.SUPABASE_URL || 'https://placeholder.supabase.co',
-    secret: process.env.SUPABASE_SERVICE_ROLE_KEY || 'placeholder-key',
-  }),
   providers: [
     CredentialsProvider({
       name: "credentials",
@@ -39,6 +35,7 @@ export const authOptions = {
   ],
   session: {
     strategy: "jwt" as const,
+    maxAge: 30 * 24 * 60 * 60, // 30 days
   },
   callbacks: {
     async jwt({ token, user }) {
@@ -57,8 +54,10 @@ export const authOptions = {
   },
   pages: {
     signIn: "/auth/login",
+    error: "/auth/login",
   },
-  secret: process.env.NEXTAUTH_SECRET || 'temp-secret-for-development',
+  secret: process.env.NEXTAUTH_SECRET || process.env.SUPABASE_SERVICE_ROLE_KEY || 'fallback-secret-key-change-in-production',
+  debug: false,
 }
 
 export default NextAuth(authOptions)
