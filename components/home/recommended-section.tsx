@@ -7,6 +7,7 @@ import { Lightbulb } from "lucide-react"
 export default function RecommendedSection() {
   const { data: session } = useSession()
 
+  // Hide if not logged in
   if (!session?.user) {
     return null
   }
