@@ -1,8 +1,5 @@
 import NextAuth from "next-auth"
 import CredentialsProvider from "next-auth/providers/credentials"
-// Optional: Supabase Adapter if you plan to support DB users later
-// import { SupabaseAdapter } from "@auth/supabase-adapter"
-// import { supabaseAdmin } from "@/lib/supabase"
 
 export const authOptions = {
   providers: [
@@ -23,7 +20,7 @@ export const authOptions = {
         const adminEmail = process.env.ADMIN_EMAIL || "admin@amasstechhub.com"
         const adminPassword = process.env.ADMIN_PASSWORD || "AmassTech2024!"
 
-        // Simple admin login (you can later replace with Supabase users)
+        // Simple admin login
         if (
           credentials.email.trim().toLowerCase() === adminEmail.toLowerCase() &&
           credentials.password === adminPassword
@@ -32,7 +29,7 @@ export const authOptions = {
             id: "admin",
             email: adminEmail,
             name: "Admin",
-            role: "admin",
+            role: "admin", // ✅ Critical for middleware
           }
         }
 
@@ -48,19 +45,24 @@ export const authOptions = {
   },
 
   callbacks: {
+    // Persist role in the token
     async jwt({ token, user }) {
       if (user) {
-        token.role = user.role
+        token.role = user.role || "user"
+      }
+      // Ensure the token always carries a role
+      if (!token.role) {
+        token.role = "user"
       }
       return token
     },
+
+    // Make role available in the session
     async session({ session, token }) {
-      if (token) {
-        session.user = {
-          ...session.user,
-          id: token.sub,
-          role: token.role,
-        }
+      session.user = {
+        ...session.user,
+        id: token.sub,
+        role: token.role || "user",
       }
       return session
     },
