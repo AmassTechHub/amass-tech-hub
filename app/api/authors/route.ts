@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server"
 import { supabaseAdmin } from "@/lib/supabase"
 
-// ✅ Get all authors
+// ✅ Fetch all authors
 export async function GET() {
   try {
     const { data, error } = await supabaseAdmin
@@ -10,6 +10,7 @@ export async function GET() {
       .order("created_at", { ascending: false })
 
     if (error) throw error
+
     return NextResponse.json({ authors: data || [] })
   } catch (error: any) {
     console.error("Error fetching authors:", error.message)
@@ -17,21 +18,39 @@ export async function GET() {
   }
 }
 
-// ✅ Add a new author (optional for admin)
+// ✅ Create a new author
 export async function POST(req: Request) {
   try {
     const { name, email, avatar_url } = await req.json()
 
+    // Validate required fields
+    if (!name || !email) {
+      return NextResponse.json(
+        { error: "Both name and email are required" },
+        { status: 400 }
+      )
+    }
+
     const { data, error } = await supabaseAdmin
       .from("authors")
-      .insert([{ name, email, avatar_url }])
-      .select()
+      .insert([
+        {
+          name: name.trim(),
+          email: email.trim().toLowerCase(),
+          avatar_url: avatar_url || null,
+        },
+      ])
+      .select("*")
       .single()
 
     if (error) throw error
-    return NextResponse.json({ author: data })
+
+    return NextResponse.json({ author: data }, { status: 201 })
   } catch (error: any) {
     console.error("Error creating author:", error.message)
-    return NextResponse.json({ error: "Failed to create author" }, { status: 500 })
+    return NextResponse.json(
+      { error: "Failed to create author" },
+      { status: 500 }
+    )
   }
 }
