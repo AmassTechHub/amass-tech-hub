@@ -11,7 +11,8 @@ import { Textarea } from "@/components/ui/textarea"
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Switch } from "@/components/ui/switch"
-import { ArrowLeft, Save } from "lucide-react"
+import { ArrowLeft, Save, Plus } from "lucide-react"
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
 
 interface Category {
   id: string
@@ -32,6 +33,8 @@ export default function NewPostPage() {
   const [authors, setAuthors] = useState<Author[]>([])
   const [loadingCats, setLoadingCats] = useState(true)
   const [loadingAuthors, setLoadingAuthors] = useState(true)
+  const [openCategoryModal, setOpenCategoryModal] = useState(false)
+  const [newCategoryName, setNewCategoryName] = useState("")
 
   const [formData, setFormData] = useState({
     title: "",
@@ -47,7 +50,6 @@ export default function NewPostPage() {
     seo_description: "",
   })
 
-  // ✅ Fetch categories and authors
   useEffect(() => {
     fetchCategories()
     fetchAuthors()
@@ -59,11 +61,7 @@ export default function NewPostPage() {
       const res = await fetch("/api/categories")
       if (res.ok) {
         const data = await res.json()
-        if (data.categories?.length > 0) {
-          setCategories(data.categories)
-        } else {
-          toast("No categories found yet. Add some first!")
-        }
+        setCategories(data.categories || [])
       } else {
         toast.error("Failed to load categories")
       }
@@ -90,23 +88,45 @@ export default function NewPostPage() {
     }
   }
 
-  // ✅ Handle submission
+  const handleAddCategory = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!newCategoryName.trim()) {
+      toast.error("Category name required")
+      return
+    }
+
+    try {
+      const slug = newCategoryName.toLowerCase().replace(/[^a-z0-9]+/g, "-")
+      const res = await fetch("/api/categories", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name: newCategoryName, slug }),
+      })
+
+      if (res.ok) {
+        toast.success("Category added ✅")
+        setOpenCategoryModal(false)
+        setNewCategoryName("")
+        fetchCategories() // Refresh category list
+      } else {
+        toast.error("Failed to add category")
+      }
+    } catch (err) {
+      console.error("Error adding category:", err)
+      toast.error("Error adding category")
+    }
+  }
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setLoading(true)
-
     try {
-      const tagsArray = formData.tags
-        .split(",")
-        .map((tag) => tag.trim())
-        .filter(Boolean)
-
+      const tagsArray = formData.tags.split(",").map((t) => t.trim()).filter(Boolean)
       const res = await fetch("/api/articles", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ ...formData, tags: tagsArray }),
       })
-
       if (res.ok) {
         const data = await res.json()
         toast.success("Article created successfully ✨")
@@ -123,9 +143,8 @@ export default function NewPostPage() {
     }
   }
 
-  const handleInputChange = (field: string, value: any) => {
+  const handleInputChange = (field: string, value: any) =>
     setFormData((prev) => ({ ...prev, [field]: value }))
-  }
 
   return (
     <div className="fade-in">
@@ -144,7 +163,7 @@ export default function NewPostPage() {
 
       <form onSubmit={handleSubmit} className="space-y-8">
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          {/* Main content section */}
+          {/* Main content */}
           <div className="lg:col-span-2 space-y-6">
             <Card>
               <CardHeader>
@@ -159,7 +178,6 @@ export default function NewPostPage() {
                   placeholder="Enter article title"
                   required
                 />
-
                 <Label>Excerpt *</Label>
                 <Textarea
                   value={formData.excerpt}
@@ -168,7 +186,6 @@ export default function NewPostPage() {
                   rows={3}
                   required
                 />
-
                 <Label>Content *</Label>
                 <Textarea
                   value={formData.content}
@@ -177,14 +194,12 @@ export default function NewPostPage() {
                   rows={15}
                   required
                 />
-
                 <Label>Featured Image URL</Label>
                 <Input
-                  value={formData.featured_image}
+                  value={formData.featureed_image}
                   onChange={(e) => handleInputChange("featured_image", e.target.value)}
                   placeholder="https://example.com/image.jpg"
                 />
-
                 <Label>Tags</Label>
                 <Input
                   value={formData.tags}
@@ -206,7 +221,6 @@ export default function NewPostPage() {
                   onChange={(e) => handleInputChange("seo_title", e.target.value)}
                   placeholder="SEO optimized title"
                 />
-
                 <Label>SEO Description</Label>
                 <Textarea
                   value={formData.seo_description}
@@ -218,7 +232,7 @@ export default function NewPostPage() {
             </Card>
           </div>
 
-          {/* Sidebar section */}
+          {/* Sidebar */}
           <div className="space-y-6">
             <Card>
               <CardHeader>
@@ -228,31 +242,56 @@ export default function NewPostPage() {
                 <Label>Status</Label>
                 <Select
                   value={formData.status}
-                  onValueChange={(value) => handleInputChange("status", value)}
+                  onValueChange={(v) => handleInputChange("status", v)}
                 >
                   <SelectTrigger className="w-full">
                     <SelectValue placeholder="Select status" />
                   </SelectTrigger>
-                  <SelectContent>
+                  <SelectContent className="z-50 max-h-[250px] overflow-y-auto">
                     <SelectItem value="draft">Draft</SelectItem>
                     <SelectItem value="published">Published</SelectItem>
                     <SelectItem value="archived">Archived</SelectItem>
                   </SelectContent>
                 </Select>
 
-                <Label>Category *</Label>
+                <div className="flex justify-between items-center">
+                  <Label>Category *</Label>
+                  <Dialog open={openCategoryModal} onOpenChange={setOpenCategoryModal}>
+                    <DialogTrigger asChild>
+                      <Button size="sm" variant="outline" className="text-xs gap-1">
+                        <Plus size={14} /> Add
+                      </Button>
+                    </DialogTrigger>
+                    <DialogContent className="max-w-sm">
+                      <DialogHeader>
+                        <DialogTitle>Add New Category</DialogTitle>
+                      </DialogHeader>
+                      <form onSubmit={handleAddCategory} className="space-y-3">
+                        <Input
+                          placeholder="Enter category name"
+                          value={newCategoryName}
+                          onChange={(e) => setNewCategoryName(e.target.value)}
+                        />
+                        <Button type="submit" className="w-full">
+                          Add Category
+                        </Button>
+                      </form>
+                    </DialogContent>
+                  </Dialog>
+                </div>
+
                 <Select
                   value={formData.category_id}
-                  onValueChange={(value) => handleInputChange("category_id", value)}
+                  onValueChange={(v) => handleInputChange("category_id", v)}
                 >
                   <SelectTrigger className="w-full">
                     <SelectValue placeholder={loadingCats ? "Loading..." : "Select category"} />
                   </SelectTrigger>
-                  <SelectContent>
+                  <SelectContent className="z-50 max-h-[250px] overflow-y-auto">
                     {categories.length > 0 ? (
-                      categories.map((category) => (
-                        <SelectItem key={category.id} value={category.id}>
-                          {category.name}
+                      categories.map((c) => (
+                        <SelectItem key={c.id} value={c.id}>
+                          {c.name}
                         </SelectItem>
                       ))
                     ) : (
@@ -266,16 +305,16 @@ export default function NewPostPage() {
                 <Label>Author *</Label>
                 <Select
                   value={formData.author_id}
-                  onValueChange={(value) => handleInputChange("author_id", value)}
+                  onValueChange={(v) => handleInputChange("author_id", v)}
                 >
                   <SelectTrigger className="w-full">
                     <SelectValue placeholder={loadingAuthors ? "Loading..." : "Select author"} />
                   </SelectTrigger>
-                  <SelectContent>
+                  <SelectContent className="z-50 max-h-[250px] overflow-y-auto">
                     {authors.length > 0 ? (
-                      authors.map((author) => (
-                        <SelectItem key={author.id} value={author.id}>
-                          {author.name}
+                      authors.map((a) => (
+                        <SelectItem key={a.id} value={a.id}>
+                          {a.name}
                         </SelectItem>
                       ))
                     ) : (
@@ -290,7 +329,7 @@ export default function NewPostPage() {
                   <Switch
                     id="featured"
                     checked={formData.featured}
-                    onCheckedChange={(checked) => handleInputChange("featured", checked)}
+                    onCheckedChange={(c) => handleInputChange("featured", c)}
                   />
                   <Label htmlFor="featured">Featured Article</Label>
                 </div>
