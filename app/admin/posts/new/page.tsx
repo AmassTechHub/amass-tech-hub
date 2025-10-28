@@ -2,6 +2,8 @@
 
 import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
+import Link from "next/link"
+import toast from "react-hot-toast"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
@@ -9,8 +11,7 @@ import { Textarea } from "@/components/ui/textarea"
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Switch } from "@/components/ui/switch"
-import { ArrowLeft, Save, Eye } from "lucide-react"
-import Link from "next/link"
+import { ArrowLeft, Save } from "lucide-react"
 
 interface Category {
   id: string
@@ -29,21 +30,22 @@ export default function NewPostPage() {
   const [loading, setLoading] = useState(false)
   const [categories, setCategories] = useState<Category[]>([])
   const [authors, setAuthors] = useState<Author[]>([])
-  
+
   const [formData, setFormData] = useState({
-    title: '',
-    excerpt: '',
-    content: '',
-    category_id: '',
-    author_id: '',
-    featured_image: '',
-    tags: '',
+    title: "",
+    excerpt: "",
+    content: "",
+    category_id: "",
+    author_id: "",
+    featured_image: "",
+    tags: "",
     featured: false,
-    status: 'draft',
-    seo_title: '',
-    seo_description: ''
+    status: "draft",
+    seo_title: "",
+    seo_description: "",
   })
 
+  // ✅ Fetch categories and authors
   useEffect(() => {
     fetchCategories()
     fetchAuthors()
@@ -51,66 +53,67 @@ export default function NewPostPage() {
 
   const fetchCategories = async () => {
     try {
-      const response = await fetch('/api/categories')
-      const data = await response.json()
-      setCategories(data.categories || [])
-    } catch (error) {
-      console.error('Error fetching categories:', error)
+      const res = await fetch("/api/categories")
+      if (res.ok) {
+        const data = await res.json()
+        setCategories(data.categories || [])
+      }
+    } catch (err) {
+      console.error("Error loading categories:", err)
     }
   }
 
   const fetchAuthors = async () => {
     try {
-      const response = await fetch('/api/authors')
-      const data = await response.json()
-      setAuthors(data.authors || [])
-    } catch (error) {
-      console.error('Error fetching authors:', error)
+      const res = await fetch("/api/authors")
+      if (res.ok) {
+        const data = await res.json()
+        setAuthors(data.authors || [])
+      }
+    } catch (err) {
+      console.error("Error loading authors:", err)
     }
   }
 
+  // ✅ Create new article
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setLoading(true)
 
     try {
-      const tagsArray = formData.tags.split(',').map(tag => tag.trim()).filter(tag => tag)
-      
-      const response = await fetch('/api/articles', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          ...formData,
-          tags: tagsArray
-        }),
+      const tagsArray = formData.tags
+        .split(",")
+        .map((tag) => tag.trim())
+        .filter(Boolean)
+
+      const res = await fetch("/api/articles", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ ...formData, tags: tagsArray }),
       })
 
-      if (response.ok) {
-        const data = await response.json()
+      if (res.ok) {
+        const data = await res.json()
+        toast.success("Article created successfully ✨")
         router.push(`/admin/posts/${data.article.id}/edit`)
       } else {
-        const error = await response.json()
-        alert(error.error || 'Failed to create article')
+        const err = await res.json()
+        toast.error(err.error || "Failed to create article")
       }
     } catch (error) {
-      console.error('Error creating article:', error)
-      alert('Failed to create article')
+      console.error("Error creating article:", error)
+      toast.error("Something went wrong.")
     } finally {
       setLoading(false)
     }
   }
 
   const handleInputChange = (field: string, value: any) => {
-    setFormData(prev => ({
-      ...prev,
-      [field]: value
-    }))
+    setFormData((prev) => ({ ...prev, [field]: value }))
   }
 
   return (
-    <div>
+    <div className="fade-in">
       <div className="flex items-center gap-4 mb-8">
         <Link href="/admin/posts">
           <Button variant="outline" size="sm">
@@ -134,91 +137,70 @@ export default function NewPostPage() {
                 <CardDescription>Write your article content here</CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
-                <div>
-                  <Label htmlFor="title">Title *</Label>
-                  <Input
-                    id="title"
-                    value={formData.title}
-                    onChange={(e) => handleInputChange('title', e.target.value)}
-                    placeholder="Enter article title"
-                    required
-                  />
-                </div>
+                <Label>Title *</Label>
+                <Input
+                  value={formData.title}
+                  onChange={(e) => handleInputChange("title", e.target.value)}
+                  placeholder="Enter article title"
+                  required
+                />
 
-                <div>
-                  <Label htmlFor="excerpt">Excerpt *</Label>
-                  <Textarea
-                    id="excerpt"
-                    value={formData.excerpt}
-                    onChange={(e) => handleInputChange('excerpt', e.target.value)}
-                    placeholder="Brief description of the article"
-                    rows={3}
-                    required
-                  />
-                </div>
+                <Label>Excerpt *</Label>
+                <Textarea
+                  value={formData.excerpt}
+                  onChange={(e) => handleInputChange("excerpt", e.target.value)}
+                  placeholder="Brief description of the article"
+                  rows={3}
+                  required
+                />
 
-                <div>
-                  <Label htmlFor="content">Content *</Label>
-                  <Textarea
-                    id="content"
-                    value={formData.content}
-                    onChange={(e) => handleInputChange('content', e.target.value)}
-                    placeholder="Write your article content here..."
-                    rows={15}
-                    required
-                  />
-                </div>
+                <Label>Content *</Label>
+                <Textarea
+                  value={formData.content}
+                  onChange={(e) => handleInputChange("content", e.target.value)}
+                  placeholder="Write your article content here..."
+                  rows={15}
+                  required
+                />
 
-                <div>
-                  <Label htmlFor="featured_image">Featured Image URL</Label>
-                  <Input
-                    id="featured_image"
-                    value={formData.featured_image}
-                    onChange={(e) => handleInputChange('featured_image', e.target.value)}
-                    placeholder="https://example.com/image.jpg"
-                  />
-                </div>
+                <Label>Featured Image URL</Label>
+                <Input
+                  value={formData.featured_image}
+                  onChange={(e) => handleInputChange("featured_image", e.target.value)}
+                  placeholder="https://example.com/image.jpg"
+                />
 
-                <div>
-                  <Label htmlFor="tags">Tags</Label>
-                  <Input
-                    id="tags"
-                    value={formData.tags}
-                    onChange={(e) => handleInputChange('tags', e.target.value)}
-                    placeholder="tag1, tag2, tag3"
-                  />
-                  <p className="text-sm text-muted-foreground mt-1">Separate tags with commas</p>
-                </div>
+                <Label>Tags</Label>
+                <Input
+                  value={formData.tags}
+                  onChange={(e) => handleInputChange("tags", e.target.value)}
+                  placeholder="tag1, tag2, tag3"
+                />
+                <p className="text-sm text-muted-foreground mt-1">
+                  Separate tags with commas
+                </p>
               </CardContent>
             </Card>
 
-            {/* SEO Settings */}
             <Card>
               <CardHeader>
                 <CardTitle>SEO Settings</CardTitle>
-                <CardDescription>Optimize your article for search engines</CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
-                <div>
-                  <Label htmlFor="seo_title">SEO Title</Label>
-                  <Input
-                    id="seo_title"
-                    value={formData.seo_title}
-                    onChange={(e) => handleInputChange('seo_title', e.target.value)}
-                    placeholder="SEO optimized title"
-                  />
-                </div>
+                <Label>SEO Title</Label>
+                <Input
+                  value={formData.seo_title}
+                  onChange={(e) => handleInputChange("seo_title", e.target.value)}
+                  placeholder="SEO optimized title"
+                />
 
-                <div>
-                  <Label htmlFor="seo_description">SEO Description</Label>
-                  <Textarea
-                    id="seo_description"
-                    value={formData.seo_description}
-                    onChange={(e) => handleInputChange('seo_description', e.target.value)}
-                    placeholder="SEO optimized description"
-                    rows={3}
-                  />
-                </div>
+                <Label>SEO Description</Label>
+                <Textarea
+                  value={formData.seo_description}
+                  onChange={(e) => handleInputChange("seo_description", e.target.value)}
+                  placeholder="SEO optimized description"
+                  rows={3}
+                />
               </CardContent>
             </Card>
           </div>
@@ -230,69 +212,70 @@ export default function NewPostPage() {
                 <CardTitle>Publish Settings</CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
-                <div>
-                  <Label htmlFor="status">Status</Label>
-                  <Select value={formData.status} onValueChange={(value) => handleInputChange('status', value)}>
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="draft">Draft</SelectItem>
-                      <SelectItem value="published">Published</SelectItem>
-                      <SelectItem value="archived">Archived</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
+                <Label>Status</Label>
+                <Select
+                  value={formData.status}
+                  onValueChange={(value) => handleInputChange("status", value)}
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="draft">Draft</SelectItem>
+                    <SelectItem value="published">Published</SelectItem>
+                    <SelectItem value="archived">Archived</SelectItem>
+                  </SelectContent>
+                </Select>
 
-                <div>
-                  <Label htmlFor="category">Category *</Label>
-                  <Select value={formData.category_id} onValueChange={(value) => handleInputChange('category_id', value)}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select category" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {categories.map((category) => (
-                        <SelectItem key={category.id} value={category.id}>
-                          {category.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
+                <Label>Category *</Label>
+                <Select
+                  value={formData.category_id}
+                  onValueChange={(value) => handleInputChange("category_id", value)}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select category" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {categories.map((category) => (
+                      <SelectItem key={category.id} value={category.id}>
+                        {category.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
 
-                <div>
-                  <Label htmlFor="author">Author *</Label>
-                  <Select value={formData.author_id} onValueChange={(value) => handleInputChange('author_id', value)}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select author" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {authors.map((author) => (
-                        <SelectItem key={author.id} value={author.id}>
-                          {author.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
+                <Label>Author *</Label>
+                <Select
+                  value={formData.author_id}
+                  onValueChange={(value) => handleInputChange("author_id", value)}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select author" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {authors.map((author) => (
+                      <SelectItem key={author.id} value={author.id}>
+                        {author.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
 
                 <div className="flex items-center space-x-2">
                   <Switch
                     id="featured"
                     checked={formData.featured}
-                    onCheckedChange={(checked) => handleInputChange('featured', checked)}
+                    onCheckedChange={(checked) => handleInputChange("featured", checked)}
                   />
                   <Label htmlFor="featured">Featured Article</Label>
                 </div>
               </CardContent>
             </Card>
 
-            <div className="flex gap-2">
-              <Button type="submit" disabled={loading} className="flex-1">
-                {loading ? <Save className="animate-spin mr-2" size={16} /> : <Save className="mr-2" size={16} />}
-                {loading ? 'Saving...' : 'Save Article'}
-              </Button>
-            </div>
+            <Button type="submit" disabled={loading} className="w-full">
+              {loading && <Save className="animate-spin mr-2" size={16} />}
+              {loading ? "Saving..." : "Save Article"}
+            </Button>
           </div>
         </div>
       </form>
