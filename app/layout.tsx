@@ -3,6 +3,7 @@ import type { Metadata } from "next"
 import { Geist, Geist_Mono } from "next/font/google"
 import { Analytics } from "@vercel/analytics/next"
 import { SpeedInsights } from "@vercel/speed-insights/next"
+import { Toaster } from "react-hot-toast" // ✅ Added toast system
 import "./globals.css"
 import Header from "@/components/layout/header"
 import Footer from "@/components/layout/footer"
@@ -68,7 +69,7 @@ export const metadata: Metadata = {
   alternates: {
     canonical: "https://www.amasstechhub.com",
   },
-    generator: 'v0.app'
+  generator: "v0.app",
 }
 
 export default function RootLayout({
@@ -126,7 +127,8 @@ export default function RootLayout({
                 "@type": "SearchAction",
                 target: {
                   "@type": "EntryPoint",
-                  urlTemplate: "https://www.amasstechhub.com/news?search={search_term_string}",
+                  urlTemplate:
+                    "https://www.amasstechhub.com/news?search={search_term_string}",
                 },
                 query_input: "required name=search_term_string",
               },
@@ -134,6 +136,7 @@ export default function RootLayout({
           }}
         />
       </head>
+
       <body className={`font-sans antialiased flex flex-col min-h-screen`}>
         <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
           <AuthProvider>
@@ -142,6 +145,19 @@ export default function RootLayout({
             <Footer />
           </AuthProvider>
         </ThemeProvider>
+
+        {/* ✅ Toast Notifications */}
+        <Toaster
+          position="top-right"
+          toastOptions={{
+            style: {
+              background: "#3c0a6b",
+              color: "#fff",
+              borderRadius: "8px",
+            },
+          }}
+        />
+
         <Analytics />
         <SpeedInsights />
       </body>
