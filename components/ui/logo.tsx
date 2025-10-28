@@ -1,47 +1,81 @@
 "use client"
 
 import { useState } from "react"
+import Image from "next/image"
 
 interface LogoProps {
   className?: string
   showText?: boolean
-  size?: "sm" | "md" | "lg"
+  size?: "sm" | "md" | "lg" | "xl"
 }
 
-export default function Logo({ className = "", showText = true, size = "md" }: LogoProps) {
+export default function Logo({
+  className = "",
+  showText = true,
+  size = "md",
+}: LogoProps) {
   const [imageError, setImageError] = useState(false)
-  
-  const sizeClasses = {
-    sm: "w-6 h-6",
-    md: "w-8 h-8", 
-    lg: "w-12 h-12"
+
+  const sizeClasses: Record<string, string> = {
+    sm: "w-7 h-7",
+    md: "w-9 h-9",
+    lg: "w-12 h-12",
+    xl: "w-16 h-16",
   }
-  
-  const textSizes = {
-    sm: "text-sm",
-    md: "text-lg",
-    lg: "text-xl"
+
+  const textSizes: Record<string, string> = {
+    sm: "text-base",
+    md: "text-xl",
+    lg: "text-2xl",
+    xl: "text-3xl",
   }
 
   return (
-    <div className={`flex items-center gap-2 ${className}`}>
-      <div className={`${sizeClasses[size]} flex items-center justify-center`}>
+    <div
+      className={`flex items-center gap-2 select-none ${className}`}
+      aria-label="Amass Tech Hub Logo"
+    >
+      <div
+        className={`${sizeClasses[size]} flex items-center justify-center transition-transform duration-300 hover:scale-105`}
+      >
+        {/* Prefer next/image for optimization */}
         {!imageError ? (
-          <img 
-            src="/logo.png" 
-            alt="Amass Tech Hub Logo" 
-            className={`${sizeClasses[size]} object-contain brightness-0 dark:invert`}
-            onError={() => setImageError(true)}
-          />
+          <>
+            {/* Light mode logo */}
+            <Image
+              src="/logo-light.png"
+              alt="Amass Tech Hub Logo"
+              width={48}
+              height={48}
+              className={`block dark:hidden ${sizeClasses[size]} object-contain`}
+              onError={() => setImageError(true)}
+              priority
+            />
+            {/* Dark mode logo */}
+            <Image
+              src="/logo-dark.png"
+              alt="Amass Tech Hub Logo"
+              width={48}
+              height={48}
+              className={`hidden dark:block ${sizeClasses[size]} object-contain`}
+              onError={() => setImageError(true)}
+              priority
+            />
+          </>
         ) : (
-          <div className={`${sizeClasses[size]} bg-primary rounded-lg flex items-center justify-center`}>
-            <span className="text-accent font-bold text-lg">A</span>
+          <div
+            className={`${sizeClasses[size]} bg-primary rounded-xl flex items-center justify-center`}
+          >
+            <span className="text-accent font-extrabold text-lg">A</span>
           </div>
         )}
       </div>
+
       {showText && (
-        <span className={`font-bold text-primary dark:text-accent ${textSizes[size]} hidden sm:inline`}>
-          Amass Tech Hub
+        <span
+          className={`font-extrabold tracking-tight ${textSizes[size]} transition-colors`}
+        >
+          <span className="text-[#3c0a6b] dark:text-[#d6a51b]">Amass Tech Hub</span>
         </span>
       )}
     </div>
