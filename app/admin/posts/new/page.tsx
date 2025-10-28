@@ -33,8 +33,12 @@ export default function NewPostPage() {
   const [authors, setAuthors] = useState<Author[]>([])
   const [loadingCats, setLoadingCats] = useState(true)
   const [loadingAuthors, setLoadingAuthors] = useState(true)
+
+  // Modal state
   const [openCategoryModal, setOpenCategoryModal] = useState(false)
+  const [openAuthorModal, setOpenAuthorModal] = useState(false)
   const [newCategoryName, setNewCategoryName] = useState("")
+  const [newAuthor, setNewAuthor] = useState({ name: "", email: "", avatar_url: "" })
 
   const [formData, setFormData] = useState({
     title: "",
@@ -50,6 +54,7 @@ export default function NewPostPage() {
     seo_description: "",
   })
 
+  // ✅ Fetch data
   useEffect(() => {
     fetchCategories()
     fetchAuthors()
@@ -59,12 +64,9 @@ export default function NewPostPage() {
     try {
       setLoadingCats(true)
       const res = await fetch("/api/categories")
-      if (res.ok) {
-        const data = await res.json()
-        setCategories(data.categories || [])
-      } else {
-        toast.error("Failed to load categories")
-      }
+      const data = await res.json()
+      if (res.ok) setCategories(data.categories || [])
+      else toast.error(data.error || "Failed to load categories")
     } catch (err) {
       console.error("Error loading categories:", err)
       toast.error("Error fetching categories")
@@ -77,21 +79,22 @@ export default function NewPostPage() {
     try {
       setLoadingAuthors(true)
       const res = await fetch("/api/authors")
-      if (res.ok) {
-        const data = await res.json()
-        setAuthors(data.authors || [])
-      }
+      const data = await res.json()
+      if (res.ok) setAuthors(data.authors || [])
+      else toast.error(data.error || "Failed to load authors")
     } catch (err) {
       console.error("Error loading authors:", err)
+      toast.error("Error fetching authors")
     } finally {
       setLoadingAuthors(false)
     }
   }
 
+  // ✅ Add Category
   const handleAddCategory = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!newCategoryName.trim()) {
-      toast.error("Category name required")
+      toast.error("Category name is required")
       return
     }
 
@@ -107,9 +110,10 @@ export default function NewPostPage() {
         toast.success("Category added ✅")
         setOpenCategoryModal(false)
         setNewCategoryName("")
-        fetchCategories() // Refresh category list
+        fetchCategories()
       } else {
-        toast.error("Failed to add category")
+        const err = await res.json()
+        toast.error(err.error || "Failed to add category")
       }
     } catch (err) {
       console.error("Error adding category:", err)
@@ -117,6 +121,37 @@ export default function NewPostPage() {
     }
   }
 
+  // ✅ Add Author
+  const handleAddAuthor = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!newAuthor.name.trim() || !newAuthor.email.trim()) {
+      toast.error("Name and email are required")
+      return
+    }
+
+    try {
+      const res = await fetch("/api/authors", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(newAuthor),
+      })
+
+      if (res.ok) {
+        toast.success("Author added ✨")
+        setOpenAuthorModal(false)
+        setNewAuthor({ name: "", email: "", avatar_url: "" })
+        fetchAuthors()
+      } else {
+        const err = await res.json()
+        toast.error(err.error || "Failed to add author")
+      }
+    } catch (err) {
+      console.error("Error adding author:", err)
+      toast.error("Error adding author")
+    }
+  }
+
+  // ✅ Create Post
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setLoading(true)
@@ -196,7 +231,7 @@ export default function NewPostPage() {
                 />
                 <Label>Featured Image URL</Label>
                 <Input
-                  value={formData.featureed_image}
+                  value={formData.featured_image}
                   onChange={(e) => handleInputChange("featured_image", e.target.value)}
                   placeholder="https://example.com/image.jpg"
                 />
@@ -217,7 +252,7 @@ export default function NewPostPage() {
               <CardContent className="space-y-4">
                 <Label>SEO Title</Label>
                 <Input
-                  value={formData.seo_title}
+                  value={formData.seseo_title}
                   onChange={(e) => handleInputChange("seo_title", e.target.value)}
                   placeholder="SEO optimized title"
                 />
@@ -239,6 +274,7 @@ export default function NewPostPage() {
                 <CardTitle>Publish Settings</CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
+                {/* STATUS */}
                 <Label>Status</Label>
                 <Select
                   value={formData.status}
@@ -254,6 +290,7 @@ export default function NewPostPage() {
                   </SelectContent>
                 </Select>
 
+                {/* CATEGORY */}
                 <div className="flex justify-between items-center">
                   <Label>Category *</Label>
                   <Dialog open={openCategoryModal} onOpenChange={setOpenCategoryModal}>
@@ -302,7 +339,43 @@ export default function NewPostPage() {
                   </SelectContent>
                 </Select>
 
-                <Label>Author *</Label>
+                {/* AUTHOR */}
+                <div className="flex justify-between items-center">
+                  <Label>Author *</Label>
+                  <Dialog open={openAuthorModal} onOpenChange={setOpenAuthorModal}>
+                    <DialogTrigger asChild>
+                      <Button size="sm" variant="outline" className="text-xs gap-1">
+                        <Plus size={14} /> Add
+                      </Button>
+                    </DialogTrigger>
+                    <DialogContent className="max-w-sm">
+                      <DialogHeader>
+                        <DialogTitle>Add New Author</DialogTitle>
+                      </DialogHeader>
+                      <form onSubmit={handleAddAuthor} className="space-y-3">
+                        <Input
+                          placeholder="Author name"
+                          value={newAuthor.name}
+                          onChange={(e) => setNewAuthor({ ...newAuthor, name: e.target.value })}
+                        />
+                        <Input
+                          placeholder="Author email"
+                          value={newAuthor.email}
+                          onChange={(e) => setNewAuthor({ ...newAuthor, email: e.target.value })}
+                        />
+                        <Input
+                          placeholder="Avatar URL (optional)"
+                          value={newAuthor.avatar_url}
+                          onChange={(e) => setNewAuthor({ ...newAuthor, avatar_url: e.target.value })}
+                        />
+                        <Button type="submit" className="w-full">
+                          Add Author
+                        </Button>
+                      </form>
+                    </DialogContent>
+                  </Dialog>
+                </div>
+
                 <Select
                   value={formData.author_id}
                   onValueChange={(v) => handleInputChange("author_id", v)}
@@ -325,6 +398,7 @@ export default function NewPostPage() {
                   </SelectContent>
                 </Select>
 
+                {/* FEATURED */}
                 <div className="flex items-center space-x-2 mt-2">
                   <Switch
                     id="featured"
