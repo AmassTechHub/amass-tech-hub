@@ -1,115 +1,111 @@
 "use client"
 
-import React, { useMemo, useState } from "react"
-import useSWR from "swr"
+import { useEffect, useState } from "react"
+import { supabase } from "@/lib/supabase"
+import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card"
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
+import { Loader2, UserPlus } from "lucide-react"
 
-const fetcher = (url: string) => fetch(url).then(r => r.json())
+interface Subscriber {
+  id: string
+  email: string
+  created_at: string
+}
 
-export default function AdminSubscribersPage() {
-  const [search, setSearch] = useState("")
-  const [page, setPage] = useState(1)
-  const pageSize = 20
+export default function SubscribersPage() {
+  const [subscribers, setSubscribers] = useState<Subscriber[]>([])
+  const [loading, setLoading] = useState(true)
 
-  const query = useMemo(() => {
-    const params = new URLSearchParams({ search, page: String(page), pageSize: String(pageSize) })
-    return `/api/subscribers?${params.toString()}`
-  }, [search, page])
+  useEffect(() => {
+    fetchSubscribers()
+    subscribeToRealtime()
+  }, [])
 
-  const { data, isLoading, mutate } = useSWR(query, fetcher)
-  const items = data?.items || []
-  const total = data?.total || 0
-  const totalPages = Math.max(1, Math.ceil(total / pageSize))
-
-  async function addSubscriber(formData: FormData) {
-    const email = String(formData.get("email") || "").trim()
-    if (!email) return
-    await fetch("/api/subscribers", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ email, source: "admin" }),
-    })
-    mutate()
+  // Fetch initial data
+  const fetchSubscribers = async () => {
+    const { data, error } = await supabase
+      .from("subscribers")
+      .select("*")
+      .order("created_at", { ascending: false })
+    if (error) console.error("Error loading subscribers:", error)
+    else setSubscribers(data || [])
+    setLoading(false)
   }
 
-  async function remove(id: string) {
-    if (!confirm("Delete this subscriber?")) return
-    await fetch(`/api/subscribers?id=${id}`, { method: "DELETE" })
-    mutate()
+  // Realtime subscription
+  const subscribeToRealtime = () => {
+    const channel = supabase
+      .channel("realtime-subscribers")
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "subscribers" },
+        (payload) => {
+          if (payload.eventType === "INSERT") {
+            setSubscribers((prev) => [payload.new as Subscriber, ...prev])
+          }
+          if (payload.eventType === "DELETE") {
+            setSubscribers((prev) =>
+              prev.filter((s) => s.id !== (payload.old as Subscriber).id)
+            )
+          }
+        }
+      )
+      .subscribe()
+
+    return () => {
+      supabase.removeChannel(channel)
+    }
   }
 
   return (
-    <div className="space-y-6">
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-        <h1 className="text-2xl font-bold">Subscribers</h1>
-        <form action={addSubscriber} className="flex gap-2 w-full sm:w-auto">
-          <input
-            name="email"
-            type="email"
-            required
-            placeholder="Add subscriber email"
-            className="flex-1 sm:w-72 border rounded-lg px-3 py-2 outline-none focus:ring-2 focus:ring-primary"
-          />
-          <button type="submit" className="bg-primary text-white px-4 py-2 rounded-lg hover:opacity-90">
-            Add
-          </button>
-        </form>
+    <div className="fade-in">
+      <div className="mb-6 flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl font-bold text-foreground">Subscribers</h1>
+          <p className="text-muted-foreground text-sm">
+            View your newsletter subscribers in real time.
+          </p>
+        </div>
+        <UserPlus className="text-primary" size={28} />
       </div>
 
-      <input
-        value={search}
-        onChange={(e) => { setPage(1); setSearch(e.target.value) }}
-        placeholder="Search subscribers..."
-        className="w-full sm:w-80 border rounded-lg px-3 py-2 outline-none focus:ring-2 focus:ring-primary"
-      />
-
-      <div className="bg-card border rounded-xl shadow-sm overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="min-w-full text-sm">
-            <thead className="bg-muted/50">
-              <tr>
-                <th className="px-4 py-3 text-left">Email</th>
-                <th className="px-4 py-3 text-left">Status</th>
-                <th className="px-4 py-3 text-left">Date</th>
-                <th className="px-4 py-3 text-right">Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {isLoading ? (
-                <tr><td className="p-6 text-center" colSpan={4}>Loading...</td></tr>
-              ) : items.length === 0 ? (
-                <tr><td className="p-6 text-center" colSpan={4}>No subscribers found.</td></tr>
-              ) : (
-                items.map((s: any) => (
-                  <tr key={s.id} className="border-t">
-                    <td className="px-4 py-3">{s.email}</td>
-                    <td className="px-4 py-3 capitalize">{s.status}</td>
-                    <td className="px-4 py-3">{new Date(s.created_at).toLocaleString()}</td>
-                    <td className="px-4 py-3 text-right">
-                      <button
-                        onClick={() => remove(s.id)}
-                        className="border rounded-lg px-3 py-1 hover:bg-muted"
-                      >
-                        Delete
-                      </button>
-                    </td>
-                  </tr>
-                ))
-              )}
-            </tbody>
-          </table>
-        </div>
-
-        <div className="flex justify-between items-center px-4 py-3 border-t text-sm">
-          <span>
-            Showing {(items.length ? (page - 1) * pageSize + 1 : 0)}–
-            {(page - 1) * pageSize + items.length} of {total}
-          </span>
-          <div className="flex gap-2">
-            <button disabled={page <= 1} onClick={() => setPage(p => p - 1)} className="border rounded-lg px-3 py-1.5 disabled:opacity-50">Prev</button>
-            <button disabled={page >= totalPages} onClick={() => setPage(p => p + 1)} className="border rounded-lg px-3 py-1.5 disabled:opacity-50">Next</button>
-          </div>
-        </div>
-      </div>
+      <Card>
+        <CardHeader>
+          <CardTitle>Subscriber List</CardTitle>
+        </CardHeader>
+        <CardContent>
+          {loading ? (
+            <div className="flex justify-center items-center py-10">
+              <Loader2 className="animate-spin text-primary w-6 h-6" />
+            </div>
+          ) : subscribers.length === 0 ? (
+            <p className="text-center text-muted-foreground py-6">
+              No subscribers yet.
+            </p>
+          ) : (
+            <div className="overflow-x-auto">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Email</TableHead>
+                    <TableHead>Date Subscribed</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {subscribers.map((sub) => (
+                    <TableRow key={sub.id}>
+                      <TableCell>{sub.email}</TableCell>
+                      <TableCell>
+                        {new Date(sub.created_at).toLocaleString()}
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
+          )}
+        </CardContent>
+      </Card>
     </div>
   )
 }
