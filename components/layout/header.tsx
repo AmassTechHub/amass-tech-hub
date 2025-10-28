@@ -1,13 +1,22 @@
 "use client"
 
 import Link from "next/link"
-import { useState } from "react"
-import { Menu, X, Facebook, Instagram, Twitter, Linkedin, Youtube } from "lucide-react"
+import { usePathname } from "next/navigation"
+import { useState, useMemo } from "react"
+import { Menu, X, Facebook, Instagram, Twitter, Linkedin, Youtube, ChevronDown } from "lucide-react"
 import ThemeToggle from "./theme-toggle"
 import SearchBar from "@/components/search/search-bar"
 import Logo from "@/components/ui/logo"
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
+import { cn } from "@/lib/utils"
 
 export default function Header() {
+  const pathname = usePathname()
   const [isOpen, setIsOpen] = useState(false)
 
   const navItems = [
@@ -22,6 +31,9 @@ export default function Header() {
     { label: "About", href: "/about" },
   ]
 
+  const primary = navItems.slice(0, 5)
+  const more = navItems.slice(5)
+
   const socialLinks = [
     { icon: Facebook, href: "https://facebook.com/amasstechhub", label: "Facebook" },
     { icon: Instagram, href: "https://instagram.com/amasstechhub", label: "Instagram" },
@@ -30,48 +42,73 @@ export default function Header() {
     { icon: Linkedin, href: "https://linkedin.com/company/amasstechhub", label: "LinkedIn" },
   ]
 
+  const isActive = useMemo(
+    () => (href: string) => (href === "/" ? pathname === "/" : pathname.startsWith(href)),
+    [pathname]
+  )
+
   return (
-    <header className="sticky top-0 z-50 bg-background dark:bg-gray-900 border-b border-border dark:border-gray-800">
+    <header className="sticky top-0 z-50 bg-background/80 backdrop-blur border-b border-border">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        {/* Top row */}
         <div className="flex justify-between items-center h-16">
-          {/* Logo */}
-          <Link href="/">
-            <Logo size="md" />
+          {/* Logo — bigger & clearer */}
+          <Link href="/" aria-label="Amass Tech Hub" className="flex items-center gap-3">
+            {/* Pass a bigger size; ensure your <Logo /> supports it */}
+            <Logo size="lg" className="h-10 w-10 md:h-11 md:w-11" />
+            <span className="hidden sm:inline text-xl md:text-2xl font-extrabold tracking-tight text-foreground">
+              Amass Tech Hub
+            </span>
           </Link>
 
           {/* Desktop Navigation */}
           <nav className="hidden lg:flex items-center gap-6">
-            {navItems.slice(0, 5).map((item) => (
+            {primary.map((item) => (
               <Link
                 key={item.href}
                 href={item.href}
-                className="text-sm font-medium text-foreground dark:text-gray-300 hover:text-primary dark:hover:text-accent transition-colors"
+                className={cn(
+                  "text-sm font-medium transition-colors",
+                  isActive(item.href)
+                    ? "text-primary"
+                    : "text-foreground/80 hover:text-primary"
+                )}
               >
                 {item.label}
               </Link>
             ))}
-            <div className="relative group">
-              <button className="text-sm font-medium text-foreground dark:text-gray-300 hover:text-primary dark:hover:text-accent transition-colors">
-                More
-              </button>
-              <div className="absolute left-0 mt-0 w-48 bg-white dark:bg-gray-800 rounded-lg shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all">
-                {navItems.slice(5).map((item) => (
-                  <Link
-                    key={item.href}
-                    href={item.href}
-                    className="block px-4 py-2 text-sm text-foreground dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 first:rounded-t-lg last:rounded-b-lg"
-                  >
-                    {item.label}
-                  </Link>
+
+            {/* Accessible “More” menu */}
+            <DropdownMenu>
+              <DropdownMenuTrigger
+                className="inline-flex items-center gap-1 text-sm font-medium text-foreground/80 hover:text-primary focus:outline-none"
+                aria-label="More navigation"
+              >
+                More <ChevronDown size={16} />
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="start" className="min-w-44">
+                {more.map((item) => (
+                  <DropdownMenuItem asChild key={item.href}>
+                    <Link
+                      href={item.href}
+                      className={cn(
+                        "w-full",
+                        isActive(item.href) ? "text-primary font-medium" : ""
+                      )}
+                    >
+                      {item.label}
+                    </Link>
+                  </DropdownMenuItem>
                 ))}
-              </div>
-            </div>
+              </DropdownMenuContent>
+            </DropdownMenu>
           </nav>
 
+          {/* Right tools */}
           <div className="hidden md:flex items-center gap-4">
             <SearchBar />
             <ThemeToggle />
-            <div className="flex items-center gap-3 border-l border-border dark:border-gray-700 pl-4">
+            <div className="flex items-center gap-3 border-l border-border pl-4">
               {socialLinks.map((social) => {
                 const Icon = social.icon
                 return (
@@ -81,7 +118,7 @@ export default function Header() {
                     target="_blank"
                     rel="noopener noreferrer"
                     aria-label={social.label}
-                    className="text-foreground dark:text-gray-300 hover:text-primary dark:hover:text-accent transition-colors"
+                    className="text-foreground/80 hover:text-primary transition-colors"
                   >
                     <Icon size={18} />
                   </a>
@@ -97,25 +134,36 @@ export default function Header() {
           </div>
 
           {/* Mobile Menu Button */}
-          <button className="md:hidden" onClick={() => setIsOpen(!isOpen)} aria-label="Toggle menu">
-            {isOpen ? <X size={24} /> : <Menu size={24} />}
+          <button
+            className="md:hidden inline-flex items-center justify-center p-2 rounded-md text-foreground hover:bg-muted/60 transition"
+            onClick={() => setIsOpen((v) => !v)}
+            aria-label="Toggle menu"
+            aria-expanded={isOpen}
+            aria-controls="mobile-nav"
+          >
+            {isOpen ? <X size={22} /> : <Menu size={22} />}
           </button>
         </div>
 
         {/* Mobile Navigation */}
         {isOpen && (
-          <nav className="md:hidden pb-4 space-y-2">
+          <nav id="mobile-nav" className="md:hidden pb-4 space-y-2">
             {navItems.map((item) => (
               <Link
                 key={item.href}
                 href={item.href}
-                className="block px-4 py-2 text-sm font-medium text-foreground dark:text-gray-300 hover:bg-card dark:hover:bg-gray-800 rounded-lg transition-colors"
+                className={cn(
+                  "block px-4 py-2 text-sm font-medium rounded-lg transition-colors",
+                  isActive(item.href)
+                    ? "bg-primary/10 text-primary"
+                    : "text-foreground/90 hover:bg-muted/60"
+                )}
                 onClick={() => setIsOpen(false)}
               >
                 {item.label}
               </Link>
             ))}
-            <div className="px-4 py-4 border-t border-border dark:border-gray-700">
+            <div className="px-4 py-4 border-t border-border">
               <p className="text-xs font-semibold text-muted-foreground mb-3">Follow Us</p>
               <div className="flex gap-3">
                 {socialLinks.map((social) => {
@@ -127,7 +175,7 @@ export default function Header() {
                       target="_blank"
                       rel="noopener noreferrer"
                       aria-label={social.label}
-                      className="text-foreground dark:text-gray-300 hover:text-primary dark:hover:text-accent transition-colors"
+                      className="text-foreground/80 hover:text-primary transition-colors"
                     >
                       <Icon size={20} />
                     </a>
