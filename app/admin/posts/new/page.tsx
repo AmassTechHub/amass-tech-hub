@@ -30,6 +30,8 @@ export default function NewPostPage() {
   const [loading, setLoading] = useState(false)
   const [categories, setCategories] = useState<Category[]>([])
   const [authors, setAuthors] = useState<Author[]>([])
+  const [loadingCats, setLoadingCats] = useState(true)
+  const [loadingAuthors, setLoadingAuthors] = useState(true)
 
   const [formData, setFormData] = useState({
     title: "",
@@ -53,18 +55,29 @@ export default function NewPostPage() {
 
   const fetchCategories = async () => {
     try {
+      setLoadingCats(true)
       const res = await fetch("/api/categories")
       if (res.ok) {
         const data = await res.json()
-        setCategories(data.categories || [])
+        if (data.categories?.length > 0) {
+          setCategories(data.categories)
+        } else {
+          toast("No categories found yet. Add some first!")
+        }
+      } else {
+        toast.error("Failed to load categories")
       }
     } catch (err) {
       console.error("Error loading categories:", err)
+      toast.error("Error fetching categories")
+    } finally {
+      setLoadingCats(false)
     }
   }
 
   const fetchAuthors = async () => {
     try {
+      setLoadingAuthors(true)
       const res = await fetch("/api/authors")
       if (res.ok) {
         const data = await res.json()
@@ -72,10 +85,12 @@ export default function NewPostPage() {
       }
     } catch (err) {
       console.error("Error loading authors:", err)
+    } finally {
+      setLoadingAuthors(false)
     }
   }
 
-  // ✅ Create new article
+  // ✅ Handle submission
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setLoading(true)
@@ -114,7 +129,7 @@ export default function NewPostPage() {
 
   return (
     <div className="fade-in">
-      <div className="flex items-center gap-4 mb-8">
+      <div className="flex items-center gap-4 mb-8 flex-wrap">
         <Link href="/admin/posts">
           <Button variant="outline" size="sm">
             <ArrowLeft size={16} className="mr-2" />
@@ -129,7 +144,7 @@ export default function NewPostPage() {
 
       <form onSubmit={handleSubmit} className="space-y-8">
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          {/* Main Content */}
+          {/* Main content section */}
           <div className="lg:col-span-2 space-y-6">
             <Card>
               <CardHeader>
@@ -149,7 +164,7 @@ export default function NewPostPage() {
                 <Textarea
                   value={formData.excerpt}
                   onChange={(e) => handleInputChange("excerpt", e.target.value)}
-                  placeholder="Brief description of the article"
+                  placeholder="Short preview for readers"
                   rows={3}
                   required
                 />
@@ -176,9 +191,7 @@ export default function NewPostPage() {
                   onChange={(e) => handleInputChange("tags", e.target.value)}
                   placeholder="tag1, tag2, tag3"
                 />
-                <p className="text-sm text-muted-foreground mt-1">
-                  Separate tags with commas
-                </p>
+                <p className="text-sm text-muted-foreground mt-1">Separate tags with commas</p>
               </CardContent>
             </Card>
 
@@ -205,7 +218,7 @@ export default function NewPostPage() {
             </Card>
           </div>
 
-          {/* Sidebar */}
+          {/* Sidebar section */}
           <div className="space-y-6">
             <Card>
               <CardHeader>
@@ -217,8 +230,8 @@ export default function NewPostPage() {
                   value={formData.status}
                   onValueChange={(value) => handleInputChange("status", value)}
                 >
-                  <SelectTrigger>
-                    <SelectValue />
+                  <SelectTrigger className="w-full">
+                    <SelectValue placeholder="Select status" />
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="draft">Draft</SelectItem>
@@ -232,15 +245,21 @@ export default function NewPostPage() {
                   value={formData.category_id}
                   onValueChange={(value) => handleInputChange("category_id", value)}
                 >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select category" />
+                  <SelectTrigger className="w-full">
+                    <SelectValue placeholder={loadingCats ? "Loading..." : "Select category"} />
                   </SelectTrigger>
                   <SelectContent>
-                    {categories.map((category) => (
-                      <SelectItem key={category.id} value={category.id}>
-                        {category.name}
-                      </SelectItem>
-                    ))}
+                    {categories.length > 0 ? (
+                      categories.map((category) => (
+                        <SelectItem key={category.id} value={category.id}>
+                          {category.name}
+                        </SelectItem>
+                      ))
+                    ) : (
+                      <div className="px-4 py-2 text-sm text-muted-foreground">
+                        No categories available
+                      </div>
+                    )}
                   </SelectContent>
                 </Select>
 
@@ -249,19 +268,25 @@ export default function NewPostPage() {
                   value={formData.author_id}
                   onValueChange={(value) => handleInputChange("author_id", value)}
                 >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select author" />
+                  <SelectTrigger className="w-full">
+                    <SelectValue placeholder={loadingAuthors ? "Loading..." : "Select author"} />
                   </SelectTrigger>
                   <SelectContent>
-                    {authors.map((author) => (
-                      <SelectItem key={author.id} value={author.id}>
-                        {author.name}
-                      </SelectItem>
-                    ))}
+                    {authors.length > 0 ? (
+                      authors.map((author) => (
+                        <SelectItem key={author.id} value={author.id}>
+                          {author.name}
+                        </SelectItem>
+                      ))
+                    ) : (
+                      <div className="px-4 py-2 text-sm text-muted-foreground">
+                        No authors available
+                      </div>
+                    )}
                   </SelectContent>
                 </Select>
 
-                <div className="flex items-center space-x-2">
+                <div className="flex items-center space-x-2 mt-2">
                   <Switch
                     id="featured"
                     checked={formData.featured}
