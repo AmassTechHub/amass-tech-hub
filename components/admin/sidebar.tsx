@@ -22,6 +22,7 @@ export default function AdminSidebar() {
     { icon: Settings, label: "Settings", href: "/admin/settings" },
     { icon: FileText, label: "Categories", href: "/admin/categories" },
     { icon: FileText, label: "Comments", href: "/admin/comments" },
+    { icon: FileText, label: "Media", href: "/admin/media" },
 
   ]
 
