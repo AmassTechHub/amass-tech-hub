@@ -3,6 +3,9 @@
 
 @custom-variant dark (&:is(.dark *));
 
+/* -----------------------------------
+   🎨 Global Theme Variables
+----------------------------------- */
 :root {
   /* Brand Colors */
   --primary: #3c0a6b;
@@ -27,6 +30,8 @@
   --chart-5: #2d0a4d;
 
   --radius: 0.625rem;
+
+  /* Sidebar */
   --sidebar: oklch(0.985 0 0);
   --sidebar-foreground: oklch(0.145 0 0);
   --sidebar-primary: oklch(0.205 0 0);
@@ -37,6 +42,9 @@
   --sidebar-ring: oklch(0.708 0 0);
 }
 
+/* -----------------------------------
+   🌙 Dark Mode Variables
+----------------------------------- */
 .dark {
   --background: #0f0f0f;
   --foreground: #ffffff;
@@ -47,11 +55,13 @@
   --border: #2a2a2a;
   --input: #1f1f1f;
   --ring: #d6a51b;
+
   --chart-1: #8b4db8;
   --chart-2: #ffd700;
   --chart-3: #a855f7;
   --chart-4: #fcd34d;
   --chart-5: #e9d5ff;
+
   --sidebar: oklch(0.205 0 0);
   --sidebar-foreground: oklch(0.985 0 0);
   --sidebar-primary: oklch(0.488 0.243 264.376);
@@ -62,8 +72,10 @@
   --sidebar-ring: oklch(0.439 0 0);
 }
 
+/* -----------------------------------
+   🧩 Tailwind Theme Mapping
+----------------------------------- */
 @theme inline {
-  /* optional: --font-sans, --font-serif, --font-mono if they are applied in the layout.tsx */
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --color-card: var(--card);
@@ -102,11 +114,67 @@
   --color-sidebar-ring: var(--sidebar-ring);
 }
 
+/* -----------------------------------
+   🧠 Base Layer & Global Behavior
+----------------------------------- */
 @layer base {
   * {
     @apply border-border outline-ring/50;
   }
   body {
     @apply bg-background text-foreground;
+    font-family: system-ui, sans-serif;
   }
+}
+
+/* -----------------------------------
+   ✨ Global Enhancements
+----------------------------------- */
+
+/* Smooth scroll for consistent UX */
+html,
+body {
+  scroll-behavior: smooth;
+}
+
+/* Subtle fade-in for images and media */
+img,
+video {
+  opacity: 0;
+  transition: opacity 0.3s ease-in-out;
+}
+img[data-loaded="true"],
+video[data-loaded="true"] {
+  opacity: 1;
+}
+
+/* Hide focus rings unless keyboard navigating */
+:focus:not(:focus-visible) {
+  outline: none;
+}
+
+/* Simple fade animation for mount transitions */
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.fade-in {
+  animation: fadeIn 0.4s ease-out forwards;
+}
+
+/* Responsive container spacing helpers */
+.container {
+  @apply mx-auto px-4 md:px-8;
+}
+
+/* Button transitions */
+button {
+  transition: all 0.2s ease;
+}
+button:hover {
+  transform: translateY(-1px);
+}
+button:active {
+  transform: translateY(0);
 }
