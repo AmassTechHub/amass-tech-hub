@@ -4,7 +4,7 @@ import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { useState, useMemo } from "react"
 import { Menu, X, Facebook, Instagram, Twitter, Linkedin, Youtube, ChevronDown } from "lucide-react"
-import ThemeToggle from "./theme-toggle"
+import ThemeToggle from "@/components/layout/theme-toggle"
 import SearchBar from "@/components/search/search-bar"
 import Logo from "@/components/ui/logo"
 import {
