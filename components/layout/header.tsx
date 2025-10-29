@@ -48,13 +48,17 @@ export default function Header() {
   )
 
   return (
-    <header className="sticky top-0 z-50 bg-background/80 backdrop-blur border-b border-border">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        {/* Top row */}
+    <header
+      className="sticky top-0 z-50 bg-background/80 backdrop-blur border-b border-border 
+      animate-fadeSlideDown"
+    >
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 transition-all duration-500">
         <div className="flex justify-between items-center h-16">
-          {/* ✅ Clean logo (no duplicate text) */}
           <Link href="/" aria-label="Amass Tech Hub" className="flex items-center gap-3">
-            <Logo size="lg" className="h-10 w-10 md:h-11 md:w-11" showText />
+            <Logo size="lg" className="h-10 w-10 md:h-11 md:w-11" />
+            <span className="hidden sm:inline text-xl md:text-2xl font-extrabold tracking-tight text-foreground">
+              Amass Tech Hub
+            </span>
           </Link>
 
           {/* Desktop Navigation */}
@@ -74,33 +78,23 @@ export default function Header() {
               </Link>
             ))}
 
-            {/* “More” Dropdown Menu */}
             <DropdownMenu>
               <DropdownMenuTrigger
                 className="inline-flex items-center gap-1 text-sm font-medium text-foreground/80 hover:text-primary focus:outline-none"
-                aria-label="More navigation"
               >
                 More <ChevronDown size={16} />
               </DropdownMenuTrigger>
               <DropdownMenuContent align="start" className="min-w-44">
                 {more.map((item) => (
                   <DropdownMenuItem asChild key={item.href}>
-                    <Link
-                      href={item.href}
-                      className={cn(
-                        "w-full",
-                        isActive(item.href) ? "text-primary font-medium" : ""
-                      )}
-                    >
-                      {item.label}
-                    </Link>
+                    <Link href={item.href}>{item.label}</Link>
                   </DropdownMenuItem>
                 ))}
               </DropdownMenuContent>
             </DropdownMenu>
           </nav>
 
-          {/* Right Section: Search, Theme, Socials, Contact */}
+          {/* Right tools */}
           <div className="hidden md:flex items-center gap-4">
             <SearchBar />
             <ThemeToggle />
@@ -113,7 +107,6 @@ export default function Header() {
                     href={social.href}
                     target="_blank"
                     rel="noopener noreferrer"
-                    aria-label={social.label}
                     className="text-foreground/80 hover:text-primary transition-colors"
                   >
                     <Icon size={18} />
@@ -129,21 +122,18 @@ export default function Header() {
             </Link>
           </div>
 
-          {/* Mobile Menu Button */}
+          {/* Mobile Toggle */}
           <button
             className="md:hidden inline-flex items-center justify-center p-2 rounded-md text-foreground hover:bg-muted/60 transition"
             onClick={() => setIsOpen((v) => !v)}
-            aria-label="Toggle menu"
-            aria-expanded={isOpen}
-            aria-controls="mobile-nav"
           >
             {isOpen ? <X size={22} /> : <Menu size={22} />}
           </button>
         </div>
 
-        {/* Mobile Navigation */}
+        {/* Mobile Menu */}
         {isOpen && (
-          <nav id="mobile-nav" className="md:hidden pb-4 space-y-2">
+          <nav id="mobile-nav" className="md:hidden pb-4 space-y-2 animate-fadeIn">
             {navItems.map((item) => (
               <Link
                 key={item.href}
@@ -159,33 +149,6 @@ export default function Header() {
                 {item.label}
               </Link>
             ))}
-            <div className="px-4 py-4 border-t border-border">
-              <p className="text-xs font-semibold text-muted-foreground mb-3">Follow Us</p>
-              <div className="flex gap-3">
-                {socialLinks.map((social) => {
-                  const Icon = social.icon
-                  return (
-                    <a
-                      key={social.label}
-                      href={social.href}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      aria-label={social.label}
-                      className="text-foreground/80 hover:text-primary transition-colors"
-                    >
-                      <Icon size={20} />
-                    </a>
-                  )
-                })}
-              </div>
-            </div>
-            <Link
-              href="/contact"
-              className="block px-4 py-2 bg-accent text-accent-foreground rounded-lg font-medium text-center hover:opacity-90 transition-opacity"
-              onClick={() => setIsOpen(false)}
-            >
-              Contact
-            </Link>
           </nav>
         )}
       </div>

@@ -14,7 +14,7 @@ export default function Footer() {
   ]
 
   return (
-    <footer className="bg-primary/90 dark:bg-gray-900 text-white mt-20">
+    <footer className="bg-primary/90 dark:bg-gray-900 text-white mt-20 animate-fadeSlideUp">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
         {/* Top grid section */}
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-10 mb-10 text-center md:text-left">
