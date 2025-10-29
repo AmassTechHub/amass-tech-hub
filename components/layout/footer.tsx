@@ -14,74 +14,53 @@ export default function Footer() {
   ]
 
   return (
-    <footer className="bg-primary dark:bg-purple-900 text-white mt-20">
+    <footer className="bg-primary/90 dark:bg-gray-900 text-white mt-20">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
         <div className="grid grid-cols-1 md:grid-cols-4 gap-8 mb-8">
-          {/* Brand */}
+          {/* Brand Section */}
           <div>
-            <div className="mb-4">
-              <Logo size="md" showText={true} />
+            <div className="flex items-center gap-2 mb-4">
+              <Logo size="md" showText={false} />
+              <span className="font-extrabold text-lg tracking-tight text-white dark:text-[#d6a51b] whitespace-nowrap">
+                Amass Tech Hub
+              </span>
             </div>
-            <p className="text-sm text-white/80">Africa's premier tech news and digital solutions hub.</p>
+            <p className="text-sm text-white/80 max-w-xs">
+              Africa's premier tech news and digital solutions hub.
+            </p>
           </div>
 
           {/* Quick Links */}
           <div>
-            <h3 className="font-semibold mb-4">Quick Links</h3>
+            <h3 className="font-semibold mb-4 text-white dark:text-[#d6a51b]">
+              Quick Links
+            </h3>
             <ul className="space-y-2 text-sm">
-              <li>
-                <Link href="/news" className="text-white/80 hover:text-white transition-colors">
-                  News
-                </Link>
-              </li>
-              <li>
-                <Link href="/reviews" className="text-white/80 hover:text-white transition-colors">
-                  Reviews
-                </Link>
-              </li>
-              <li>
-                <Link href="/tutorials" className="text-white/80 hover:text-white transition-colors">
-                  Tutorials
-                </Link>
-              </li>
-              <li>
-                <Link href="/tools" className="text-white/80 hover:text-white transition-colors">
-                  Tools
-                </Link>
-              </li>
+              <li><Link href="/news" className="text-white/80 hover:text-white transition-colors">News</Link></li>
+              <li><Link href="/reviews" className="text-white/80 hover:text-white transition-colors">Reviews</Link></li>
+              <li><Link href="/tutorials" className="text-white/80 hover:text-white transition-colors">Tutorials</Link></li>
+              <li><Link href="/tools" className="text-white/80 hover:text-white transition-colors">Tools</Link></li>
             </ul>
           </div>
 
           {/* Resources */}
           <div>
-            <h3 className="font-semibold mb-4">Resources</h3>
+            <h3 className="font-semibold mb-4 text-white dark:text-[#d6a51b]">
+              Resources
+            </h3>
             <ul className="space-y-2 text-sm">
-              <li>
-                <Link href="/about" className="text-white/80 hover:text-white transition-colors">
-                  About Us
-                </Link>
-              </li>
-              <li>
-                <Link href="/services" className="text-white/80 hover:text-white transition-colors">
-                  Services
-                </Link>
-              </li>
-              <li>
-                <Link href="/advertise" className="text-white/80 hover:text-white transition-colors">
-                  Advertise
-                </Link>
-              </li>
-              <li>
-                <Link href="/contact" className="text-white/80 hover:text-white transition-colors">
-                  Contact
-                </Link>
-              </li>
+              <li><Link href="/about" className="text-white/80 hover:text-white transition-colors">About Us</Link></li>
+              <li><Link href="/services" className="text-white/80 hover:text-white transition-colors">Services</Link></li>
+              <li><Link href="/advertise" className="text-white/80 hover:text-white transition-colors">Advertise</Link></li>
+              <li><Link href="/contact" className="text-white/80 hover:text-white transition-colors">Contact</Link></li>
             </ul>
           </div>
 
-          {/* Social */}
+          {/* Social Links */}
           <div>
-            <h3 className="font-semibold mb-4">Follow Us</h3>
+            <h3 className="font-semibold mb-4 text-white dark:text-[#d6a51b]">
+              Follow Us
+            </h3>
             <div className="flex gap-4 flex-wrap">
               {socialLinks.map((social) => {
                 const Icon = social.icon
@@ -102,10 +81,13 @@ export default function Footer() {
           </div>
         </div>
 
+        {/* Bottom Section */}
         <div className="border-t border-white/20 pt-8">
-          <div className="flex flex-col md:flex-row justify-between items-center text-sm text-white/80">
-            <p>&copy; 2025 Amass Tech Hub. All rights reserved.</p>
-            <div className="flex gap-6 mt-4 md:mt-0">
+          <div className="flex flex-col md:flex-row justify-between items-center text-sm text-white/80 gap-4">
+            <p className="text-center md:text-left">
+              &copy; {new Date().getFullYear()} Amass Tech Hub. All rights reserved.
+            </p>
+            <div className="flex gap-6">
               <Link href="#" className="hover:text-white transition-colors">
                 Privacy Policy
               </Link>

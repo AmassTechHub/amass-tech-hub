@@ -32,16 +32,13 @@ export default function Logo({
 
   return (
     <div
-      className={`flex items-center gap-2 select-none ${className}`}
+      className={`flex items-center gap-2 whitespace-nowrap ${className}`}
       aria-label="Amass Tech Hub Logo"
     >
-      <div
-        className={`${sizeClasses[size]} flex items-center justify-center transition-transform duration-300 hover:scale-105`}
-      >
-        {/* Prefer next/image for optimization */}
+      {/* Logo Image */}
+      <div className={`${sizeClasses[size]} flex items-center justify-center`}>
         {!imageError ? (
           <>
-            {/* Light mode logo */}
             <Image
               src="/logo-light.png"
               alt="Amass Tech Hub Logo"
@@ -51,7 +48,6 @@ export default function Logo({
               onError={() => setImageError(true)}
               priority
             />
-            {/* Dark mode logo */}
             <Image
               src="/logo-dark.png"
               alt="Amass Tech Hub Logo"
@@ -71,11 +67,12 @@ export default function Logo({
         )}
       </div>
 
+      {/* Text — Always horizontal, color swaps by theme */}
       {showText && (
         <span
-          className={`font-extrabold tracking-tight ${textSizes[size]} transition-colors`}
+          className={`font-extrabold tracking-tight ${textSizes[size]} transition-colors text-[#3c0a6b] dark:text-[#d6a51b]`}
         >
-          <span className="text-[#3c0a6b] dark:text-[#d6a51b]">Amass Tech Hub</span>
+          Amass Tech Hub
         </span>
       )}
     </div>
