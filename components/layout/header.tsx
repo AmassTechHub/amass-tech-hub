@@ -3,7 +3,16 @@
 import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { useState, useMemo } from "react"
-import { Menu, X, Facebook, Instagram, Twitter, Linkedin, Youtube, ChevronDown } from "lucide-react"
+import {
+  Menu,
+  X,
+  Facebook,
+  Instagram,
+  Twitter,
+  Linkedin,
+  Youtube,
+  ChevronDown,
+} from "lucide-react"
 import ThemeToggle from "@/components/layout/theme-toggle"
 import SearchBar from "@/components/search/search-bar"
 import Logo from "@/components/ui/logo"
@@ -48,17 +57,12 @@ export default function Header() {
   )
 
   return (
-    <header
-      className="sticky top-0 z-50 bg-background/80 backdrop-blur border-b border-border 
-      animate-fadeSlideDown"
-    >
+    <header className="sticky top-0 z-50 bg-background/80 backdrop-blur border-b border-border animate-fadeSlideDown">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 transition-all duration-500">
         <div className="flex justify-between items-center h-16">
+          {/* ✅ Single Logo (includes text inside) */}
           <Link href="/" aria-label="Amass Tech Hub" className="flex items-center gap-3">
-            <Logo size="lg" className="h-10 w-10 md:h-11 md:w-11" />
-            <span className="hidden sm:inline text-xl md:text-2xl font-extrabold tracking-tight text-foreground">
-              Amass Tech Hub
-            </span>
+            <Logo size="lg" showText={true} />
           </Link>
 
           {/* Desktop Navigation */}
@@ -78,10 +82,9 @@ export default function Header() {
               </Link>
             ))}
 
+            {/* Dropdown for “More” */}
             <DropdownMenu>
-              <DropdownMenuTrigger
-                className="inline-flex items-center gap-1 text-sm font-medium text-foreground/80 hover:text-primary focus:outline-none"
-              >
+              <DropdownMenuTrigger className="inline-flex items-center gap-1 text-sm font-medium text-foreground/80 hover:text-primary focus:outline-none">
                 More <ChevronDown size={16} />
               </DropdownMenuTrigger>
               <DropdownMenuContent align="start" className="min-w-44">
