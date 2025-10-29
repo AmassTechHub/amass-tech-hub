@@ -44,6 +44,7 @@ export default function Logo({
               alt="Amass Tech Hub Logo"
               width={48}
               height={48}
+              unoptimized
               className={`block dark:hidden ${sizeClasses[size]} object-contain`}
               onError={() => setImageError(true)}
               priority
