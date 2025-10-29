@@ -15,14 +15,16 @@ export default function Logo({
   showText = true,
   size = "md",
 }: LogoProps) {
-  const [imageError, setImageError] = useState(false)
   const [mounted, setMounted] = useState(false)
-  const { theme } = useTheme()
+  const { resolvedTheme } = useTheme()
+  const logoSrc = resolvedTheme === 'dark' ? '/logo-dark.png' : '/logo-light.png'
+  const [imgSrc, setImgSrc] = useState(logoSrc)
 
   // Prevent hydration mismatch
   useEffect(() => {
     setMounted(true)
-  }, [])
+    setImgSrc(resolvedTheme === 'dark' ? '/logo-dark.png' : '/logo-light.png')
+  }, [resolvedTheme])
 
   const sizes = {
     sm: 28,
@@ -48,43 +50,28 @@ export default function Logo({
     )
   }
 
-  const logoSrc = theme === 'dark' ? '/logo-dark.png' : '/logo-light.png'
-
   return (
     <div className={`flex items-center gap-2 ${className}`}>
-      {!imageError ? (
-        <>
-          {/* Light mode logo */}
-          <Image
-            src={"/logo-light.png"}
-            alt="Amass Tech Hub Logo"
-            width={sizes[size]}
-            height={sizes[size]}
-            className="object-contain dark:hidden"
-            onError={() => setImageError(true)}
-            priority
-          />
-          {/* Dark mode logo */}
-          <Image
-            src={"/logo-dark.png"}
-            alt="Amass Tech Hub Logo"
-            width={sizes[size]}
-            height={sizes[size]}
-            className="hidden dark:block object-contain"
-            onError={() => setImageError(true)}
-            priority
-          />
-        </>
-      ) : (
-        <div className="bg-primary text-accent font-extrabold rounded-lg flex items-center justify-center w-10 h-10">
-          A
-        </div>
-      )}
-
+      <Image
+        src={imgSrc}
+        alt="Amass Tech Hub Logo"
+        width={sizes[size]}
+        height={sizes[size]}
+        className="object-contain"
+        onError={(e) => {
+          // Fallback to default logo if theme-specific one fails
+          const fallback = resolvedTheme === 'dark' ? '/logo.png' : '/logo-light.png';
+          if (e.currentTarget.src.endsWith(fallback)) {
+            // If fallback also fails, show text only
+            e.currentTarget.style.display = 'none';
+          } else {
+            setImgSrc(fallback);
+          }
+        }}
+        priority
+      />
       {showText && (
-        <span
-          className={`font-extrabold tracking-tight ${textSizes[size]} text-[#3c0a6b] dark:text-[#d6a51b]`}
-        >
+        <span className={`font-extrabold tracking-tight ${textSizes[size]} text-[#3c0a6b] dark:text-[#d6a51b]`}>
           Amass Tech Hub
         </span>
       )}
