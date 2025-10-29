@@ -16,9 +16,10 @@ export default function Footer() {
   return (
     <footer className="bg-primary/90 dark:bg-gray-900 text-white mt-20">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-8 mb-8">
+        {/* Top grid section */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-10 mb-10 text-center md:text-left">
           {/* Brand Section */}
-          <div>
+          <div className="flex flex-col items-center md:items-start">
             <div className="flex items-center gap-2 mb-4">
               <Logo size="md" showText={false} />
               <span className="font-extrabold text-lg tracking-tight text-white dark:text-[#d6a51b] whitespace-nowrap">
@@ -32,9 +33,7 @@ export default function Footer() {
 
           {/* Quick Links */}
           <div>
-            <h3 className="font-semibold mb-4 text-white dark:text-[#d6a51b]">
-              Quick Links
-            </h3>
+            <h3 className="font-semibold mb-4 text-white dark:text-[#d6a51b]">Quick Links</h3>
             <ul className="space-y-2 text-sm">
               <li><Link href="/news" className="text-white/80 hover:text-white transition-colors">News</Link></li>
               <li><Link href="/reviews" className="text-white/80 hover:text-white transition-colors">Reviews</Link></li>
@@ -45,9 +44,7 @@ export default function Footer() {
 
           {/* Resources */}
           <div>
-            <h3 className="font-semibold mb-4 text-white dark:text-[#d6a51b]">
-              Resources
-            </h3>
+            <h3 className="font-semibold mb-4 text-white dark:text-[#d6a51b]">Resources</h3>
             <ul className="space-y-2 text-sm">
               <li><Link href="/about" className="text-white/80 hover:text-white transition-colors">About Us</Link></li>
               <li><Link href="/services" className="text-white/80 hover:text-white transition-colors">Services</Link></li>
@@ -57,11 +54,9 @@ export default function Footer() {
           </div>
 
           {/* Social Links */}
-          <div>
-            <h3 className="font-semibold mb-4 text-white dark:text-[#d6a51b]">
-              Follow Us
-            </h3>
-            <div className="flex gap-4 flex-wrap">
+          <div className="flex flex-col items-center md:items-start">
+            <h3 className="font-semibold mb-4 text-white dark:text-[#d6a51b]">Follow Us</h3>
+            <div className="flex gap-4 flex-wrap justify-center md:justify-start">
               {socialLinks.map((social) => {
                 const Icon = social.icon
                 return (
@@ -81,13 +76,11 @@ export default function Footer() {
           </div>
         </div>
 
-        {/* Bottom Section */}
+        {/* Divider and bottom section */}
         <div className="border-t border-white/20 pt-8">
-          <div className="flex flex-col md:flex-row justify-between items-center text-sm text-white/80 gap-4">
-            <p className="text-center md:text-left">
-              &copy; {new Date().getFullYear()} Amass Tech Hub. All rights reserved.
-            </p>
-            <div className="flex gap-6">
+          <div className="flex flex-col md:flex-row justify-between items-center gap-4 text-sm text-white/80 text-center">
+            <p>&copy; {new Date().getFullYear()} Amass Tech Hub. All rights reserved.</p>
+            <div className="flex gap-6 justify-center">
               <Link href="#" className="hover:text-white transition-colors">
                 Privacy Policy
               </Link>
