@@ -15,10 +15,10 @@ export async function GET(request: NextRequest) {
     const status = searchParams.get("status") || "published"
     const featured = searchParams.get("featured")
 
-    // ✅ Explicit relationship aliases (to avoid “more than one relationship found”)
     let query = supabaseAdmin
       .from("articles")
-      .select(`
+      .select(
+        `
         id,
         title,
         slug,
@@ -32,9 +32,11 @@ export async function GET(request: NextRequest) {
         reading_time,
         seo_title,
         seo_description,
+        featured_image,
         categories:category_id ( id, name, slug, color ),
         authors:author_id ( id, name, email, avatar_url )
-      `)
+        `
+      )
       .order("published_at", { ascending: false })
 
     if (category && category !== "all") query = query.eq("category_id", category)
@@ -54,77 +56,86 @@ export async function GET(request: NextRequest) {
   }
 }
 
-// Generate base slug from title
-let slug = title
-  .toLowerCase()
-  .replace(/[^a-z0-9]+/g, "-")
-  .replace(/(^-|-$)/g, "")
+// ✅ POST create new article
+export async function POST(request: NextRequest) {
+  try {
+    const body = await request.json()
+    const {
+      title,
+      content,
+      excerpt,
+      category_id,
+      author_id,
+      featured_image,
+      tags,
+      featured,
+      status,
+      seo_title,
+      seo_description,
+    } = body
 
-// Ensure slug is unique (append short suffix if taken)
-const { data: existingSlug } = await supabaseAdmin
-  .from("articles")
-  .select("id")
-  .eq("slug", slug)
-  .limit(1)
-  .maybeSingle()
+    if (!title || !content || !excerpt || !category_id || !author_id) {
+      return NextResponse.json(
+        { error: "Missing required fields: title, content, excerpt, category_id, author_id" },
+        { status: 400 }
+      )
+    }
 
-if (existingSlug) {
-  const suffix = Date.now().toString().slice(-5)
-  slug = `${slug}-${suffix}`
+    const slug = title.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "")
+    const wordCount = content.split(/\s+/).length
+    const readingTime = Math.max(1, Math.ceil(wordCount / 200))
+
+    const articleData = {
+      title,
+      slug,
+      content,
+      excerpt,
+      category_id,
+      author_id,
+      featured_image: featured_image || null,
+      tags: tags || [],
+      featured: featured || false,
+      status: status || "draft",
+      reading_time: readingTime,
+      seo_title: seo_title || title,
+      seo_description: seo_description || excerpt,
+      published_at: status === "published" ? new Date().toISOString() : null,
+    }
+
+    const { data, error } = await supabaseAdmin
+      .from("articles")
+      .insert(articleData)
+      .select(
+        `
+        id,
+        title,
+        slug,
+        excerpt,
+        content,
+        featured,
+        status,
+        views,
+        created_at,
+        published_at,
+        reading_time,
+        seo_title,
+        seo_description,
+        featured_image,
+        categories:category_id ( id, name, slug, color ),
+        authors:author_id ( id, name, email, avatar_url )
+        `
+      )
+      .single()
+
+    if (error) {
+      console.error("Database error:", error)
+      return NextResponse.json({ error: error.message }, { status: 500 })
+    }
+
+    // ✅ All returns stay *inside* this function
+    return NextResponse.json({ article: data }, { status: 201 })
+  } catch (error) {
+    console.error("API error:", error)
+    return NextResponse.json({ error: "Internal server error" }, { status: 500 })
+  }
 }
-
-// Estimate reading time (200 words per minute)
-const wordCount = content.split(/\s+/).length
-const readingTime = Math.max(1, Math.ceil(wordCount / 200))
-
-const articleData = {
-  title,
-  slug,
-  content,
-  excerpt,
-  category_id,
-  author_id,
-  featured_image: featured_image || null,
-  tags: Array.isArray(tags)
-    ? tags
-    : String(tags || "")
-        .split(",")
-        .map((t) => t.trim())
-        .filter(Boolean),
-  featured: !!featured,
-  status: status || "draft",
-  reading_time: readingTime,
-  seo_title: seo_title || title,
-  seo_description: seo_description || excerpt,
-  published_at: status === "published" ? new Date().toISOString() : null,
-}
-
-// Insert into Supabase
-const { data, error } = await supabaseAdmin
-  .from("articles")
-  .insert(articleData)
-  .select(`
-    id,
-    title,
-    slug,
-    excerpt,
-    content,
-    featured,
-    status,
-    views,
-    created_at,
-    published_at,
-    reading_time,
-    seo_title,
-    seo_description,
-    categories:category_id ( id, name, slug, color ),
-    authors:author_id ( id, name, email, avatar_url )
-  `)
-  .single()
-
-if (error) {
-  console.error("Database error:", error)
-  return NextResponse.json({ error: error.message }, { status: 500 })
-}
-
-return NextResponse.json({ article: data }, { status: 201 })

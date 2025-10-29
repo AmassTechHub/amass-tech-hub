@@ -1,5 +1,6 @@
 import { notFound } from "next/navigation"
 import Image from "next/image"
+import Link from "next/link"
 import ReactMarkdown from "react-markdown"
 import remarkGfm from "remark-gfm"
 import { supabaseAdmin } from "@/lib/supabase"
@@ -15,11 +16,11 @@ interface Article {
   published_at?: string
   reading_time?: number
   authors?: { name: string; avatar_url?: string } | null
-  categories?: { name: string; slug: string; color?: string } | null
+  categories?: { id: string; name: string; slug: string; color?: string } | null
 }
 
-// ✅ Fetch the article by slug
-export async function getArticle(slug: string) {
+// ✅ Fetch one article by slug
+async function getArticle(slug: string): Promise<Article | null> {
   const { data, error } = await supabaseAdmin
     .from("articles")
     .select(
@@ -34,7 +35,7 @@ export async function getArticle(slug: string) {
       published_at,
       reading_time,
       authors:author_id ( name, avatar_url ),
-      categories:category_id ( name, slug, color )
+      categories:category_id ( id, name, slug, color )
       `
     )
     .eq("slug", slug)
@@ -44,16 +45,38 @@ export async function getArticle(slug: string) {
   return data as Article
 }
 
-// ✅ Generate static params (optional if using SSG)
+// ✅ Fetch related articles (same category)
+async function getRelatedArticles(categoryId: string, excludeSlug: string) {
+  const { data, error } = await supabaseAdmin
+    .from("articles")
+    .select("id, title, slug, excerpt, featured_image, published_at")
+    .eq("status", "published")
+    .eq("category_id", categoryId)
+    .neq("slug", excludeSlug)
+    .order("published_at", { ascending: false })
+    .limit(3)
+
+  if (error) {
+    console.error("Error fetching related articles:", error)
+    return []
+  }
+  return data || []
+}
+
+// ✅ Generate static paths for build-time
 export async function generateStaticParams() {
   const { data } = await supabaseAdmin.from("articles").select("slug").eq("status", "published")
   return (data || []).map((a) => ({ slug: a.slug }))
 }
 
-// ✅ Main article page
+// ✅ Main page
 export default async function ArticlePage({ params }: { params: { slug: string } }) {
   const article = await getArticle(params.slug)
   if (!article) return notFound()
+
+  const related = article.categories?.id
+    ? await getRelatedArticles(article.categories.id, article.slug)
+    : []
 
   return (
     <article className="max-w-4xl mx-auto py-10 px-4">
@@ -108,12 +131,45 @@ export default async function ArticlePage({ params }: { params: { slug: string }
         </div>
       )}
 
-      {/* Content */}
-      <div className="prose prose-lg dark:prose-invert max-w-none">
+      {/* Article content */}
+      <div className="prose prose-lg dark:prose-invert max-w-none mb-16">
         <ReactMarkdown remarkPlugins={[remarkGfm]}>
           {article.content || "_No content available._"}
         </ReactMarkdown>
       </div>
+
+      {/* Related Articles Section */}
+      {related.length > 0 && (
+        <section className="mt-12 border-t border-border pt-8">
+          <h2 className="text-2xl font-bold mb-6 text-foreground">Related Articles</h2>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            {related.map((r) => (
+              <Link
+                key={r.slug}
+                href={`/news/${r.slug}`}
+                className="group block rounded-xl overflow-hidden border border-border hover:shadow-md transition"
+              >
+                {r.featured_image && (
+                  <div className="relative w-full h-48">
+                    <Image
+                      src={r.featured_image}
+                      alt={r.title}
+                      fill
+                      className="object-cover group-hover:scale-105 transition-transform duration-300"
+                    />
+                  </div>
+                )}
+                <div className="p-4">
+                  <h3 className="font-semibold text-lg mb-1 group-hover:text-primary transition-colors">
+                    {r.title}
+                  </h3>
+                  <p className="text-sm text-muted-foreground line-clamp-2">{r.excerpt}</p>
+                </div>
+              </Link>
+            ))}
+          </div>
+        </section>
+      )}
     </article>
   )
 }
