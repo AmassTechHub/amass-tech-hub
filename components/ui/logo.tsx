@@ -1,7 +1,7 @@
 "use client"
 
-import { useState } from "react"
 import Image from "next/image"
+import { useState } from "react"
 
 interface LogoProps {
   className?: string
@@ -16,53 +16,54 @@ export default function Logo({
 }: LogoProps) {
   const [imageError, setImageError] = useState(false)
 
-  const sizeClasses: Record<string, string> = {
-    sm: "w-7 h-7",
-    md: "w-9 h-9",
-    lg: "w-12 h-12",
-    xl: "w-16 h-16",
+  const sizes = {
+    sm: 28,
+    md: 36,
+    lg: 48,
+    xl: 64,
   }
 
-  const textSizes: Record<string, string> = {
-    sm: "text-base",
-    md: "text-xl",
-    lg: "text-2xl",
-    xl: "text-3xl",
+  const textSizes = {
+    sm: "text-sm",
+    md: "text-lg",
+    lg: "text-xl",
+    xl: "text-2xl",
   }
 
   return (
     <div className={`flex items-center gap-2 ${className}`}>
-      <div className={`${sizeClasses[size]} relative flex items-center justify-center`}>
+      <div className="relative flex items-center justify-center">
         {!imageError ? (
           <>
-            {/* Light Mode */}
             <Image
               src="/logo-light.png"
               alt="Amass Tech Hub Logo"
-              fill
-              className="object-contain block dark:hidden"
+              width={sizes[size]}
+              height={sizes[size]}
+              className="block dark:hidden object-contain"
               onError={() => setImageError(true)}
               priority
             />
-            {/* Dark Mode */}
             <Image
               src="/logo-dark.png"
               alt="Amass Tech Hub Logo"
-              fill
-              className="object-contain hidden dark:block"
+              width={sizes[size]}
+              height={sizes[size]}
+              className="hidden dark:block object-contain"
               onError={() => setImageError(true)}
               priority
             />
           </>
         ) : (
-          <div className="bg-primary text-accent font-extrabold rounded-lg flex items-center justify-center w-full h-full">
+          <div className="bg-primary text-accent font-extrabold rounded-lg flex items-center justify-center w-10 h-10">
             A
           </div>
         )}
       </div>
+
       {showText && (
         <span
-          className={`font-extrabold tracking-tight ${textSizes[size]} transition-colors text-[#3c0a6b] dark:text-[#d6a51b]`}
+          className={`font-extrabold tracking-tight ${textSizes[size]} text-[#3c0a6b] dark:text-[#d6a51b]`}
         >
           Amass Tech Hub
         </span>

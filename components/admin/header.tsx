@@ -11,7 +11,7 @@ interface AdminHeaderProps {
 export default function AdminHeader({ onMenuClick }: AdminHeaderProps) {
   return (
     <header className="flex items-center justify-between px-4 md:px-8 py-3 border-b border-border bg-background sticky top-0 z-40">
-      {/* Left side: logo + dashboard title */}
+      {/* Left side: logo + title */}
       <div className="flex items-center gap-3">
         <button
           className="md:hidden p-2 rounded-md hover:bg-muted transition"
@@ -21,14 +21,15 @@ export default function AdminHeader({ onMenuClick }: AdminHeaderProps) {
           <Menu size={22} />
         </button>
 
-        {/* ✅ Admin uses logo to match brand identity */}
         <div className="flex items-center gap-2">
           <Logo size="md" showText={false} />
-          <span className="font-semibold text-base md:text-lg">Admin Dashboard</span>
+          <span className="font-semibold text-base md:text-lg text-[#3c0a6b] dark:text-[#d6a51b]">
+            Admin Dashboard
+          </span>
         </div>
       </div>
 
-      {/* Right side: icons */}
+      {/* Right side icons */}
       <div className="flex items-center gap-4">
         <button
           className="relative p-2 rounded-md hover:bg-muted transition"
