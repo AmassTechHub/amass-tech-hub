@@ -52,13 +52,9 @@ export default function Header() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Top row */}
         <div className="flex justify-between items-center h-16">
-          {/* Logo — bigger & clearer */}
+          {/* ✅ Clean logo (no duplicate text) */}
           <Link href="/" aria-label="Amass Tech Hub" className="flex items-center gap-3">
-            {/* Pass a bigger size; ensure your <Logo /> supports it */}
-            <Logo size="lg" className="h-10 w-10 md:h-11 md:w-11" />
-            <span className="hidden sm:inline text-xl md:text-2xl font-extrabold tracking-tight text-foreground">
-              Amass Tech Hub
-            </span>
+            <Logo size="lg" className="h-10 w-10 md:h-11 md:w-11" showText />
           </Link>
 
           {/* Desktop Navigation */}
@@ -78,7 +74,7 @@ export default function Header() {
               </Link>
             ))}
 
-            {/* Accessible “More” menu */}
+            {/* “More” Dropdown Menu */}
             <DropdownMenu>
               <DropdownMenuTrigger
                 className="inline-flex items-center gap-1 text-sm font-medium text-foreground/80 hover:text-primary focus:outline-none"
@@ -104,7 +100,7 @@ export default function Header() {
             </DropdownMenu>
           </nav>
 
-          {/* Right tools */}
+          {/* Right Section: Search, Theme, Socials, Contact */}
           <div className="hidden md:flex items-center gap-4">
             <SearchBar />
             <ThemeToggle />
