@@ -1,7 +1,8 @@
 "use client"
 
 import Image from "next/image"
-import { useState } from "react"
+import { useState, useEffect } from "react"
+import { useTheme } from "next-themes"
 
 interface LogoProps {
   className?: string
@@ -15,6 +16,13 @@ export default function Logo({
   size = "md",
 }: LogoProps) {
   const [imageError, setImageError] = useState(false)
+  const [mounted, setMounted] = useState(false)
+  const { theme } = useTheme()
+
+  // Prevent hydration mismatch
+  useEffect(() => {
+    setMounted(true)
+  }, [])
 
   const sizes = {
     sm: 28,
@@ -30,18 +38,43 @@ export default function Logo({
     xl: "text-2xl",
   }
 
+  // Don't render the logo during SSR to avoid hydration issues
+  if (!mounted) {
+    return (
+      <div 
+        className={`flex items-center gap-2 ${className}`}
+        style={{ width: sizes[size], height: sizes[size] }}
+      />
+    )
+  }
+
+  const logoSrc = theme === 'dark' ? '/logo-dark.png' : '/logo-light.png'
+
   return (
     <div className={`flex items-center gap-2 ${className}`}>
       {!imageError ? (
-        <Image
-          src="/logo.png"
-          alt="Amass Tech Hub Logo"
-          width={sizes[size]}
-          height={sizes[size]}
-          className="object-contain"
-          onError={() => setImageError(true)}
-          priority
-        />
+        <>
+          {/* Light mode logo */}
+          <Image
+            src={"/logo-light.png"}
+            alt="Amass Tech Hub Logo"
+            width={sizes[size]}
+            height={sizes[size]}
+            className="object-contain dark:hidden"
+            onError={() => setImageError(true)}
+            priority
+          />
+          {/* Dark mode logo */}
+          <Image
+            src={"/logo-dark.png"}
+            alt="Amass Tech Hub Logo"
+            width={sizes[size]}
+            height={sizes[size]}
+            className="hidden dark:block object-contain"
+            onError={() => setImageError(true)}
+            priority
+          />
+        </>
       ) : (
         <div className="bg-primary text-accent font-extrabold rounded-lg flex items-center justify-center w-10 h-10">
           A
