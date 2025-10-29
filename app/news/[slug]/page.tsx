@@ -9,8 +9,8 @@ interface Article {
   id: string
   title: string
   slug: string
-  content: string
   excerpt: string
+  content: string
   featured_image?: string
   created_at: string
   published_at?: string
@@ -19,7 +19,7 @@ interface Article {
   categories?: { id: string; name: string; slug: string; color?: string } | null
 }
 
-// ✅ Fetch one article by slug
+// ✅ Get one article by slug
 async function getArticle(slug: string): Promise<Article | null> {
   const { data, error } = await supabaseAdmin
     .from("articles")
@@ -45,28 +45,31 @@ async function getArticle(slug: string): Promise<Article | null> {
   return data as Article
 }
 
-// ✅ Fetch related articles (same category)
-async function getRelatedArticles(categoryId: string, excludeSlug: string) {
-  const { data, error } = await supabaseAdmin
+// ✅ Get related or recent articles
+async function getSuggestions(categoryId: string | null, excludeSlug: string) {
+  let query = supabaseAdmin
     .from("articles")
     .select("id, title, slug, excerpt, featured_image, published_at")
     .eq("status", "published")
-    .eq("category_id", categoryId)
     .neq("slug", excludeSlug)
     .order("published_at", { ascending: false })
     .limit(3)
 
-  if (error) {
-    console.error("Error fetching related articles:", error)
-    return []
-  }
-  return data || []
-}
+  if (categoryId) query = query.eq("category_id", categoryId)
 
-// ✅ Generate static paths for build-time
-export async function generateStaticParams() {
-  const { data } = await supabaseAdmin.from("articles").select("slug").eq("status", "published")
-  return (data || []).map((a) => ({ slug: a.slug }))
+  let { data, error } = await query
+  if (error || !data || data.length === 0) {
+    // fallback → 3 most recent
+    const { data: recent } = await supabaseAdmin
+      .from("articles")
+      .select("id, title, slug, excerpt, featured_image, published_at")
+      .eq("status", "published")
+      .order("published_at", { ascending: false })
+      .limit(3)
+    return recent || []
+  }
+
+  return data
 }
 
 // ✅ Main page
@@ -74,9 +77,7 @@ export default async function ArticlePage({ params }: { params: { slug: string }
   const article = await getArticle(params.slug)
   if (!article) return notFound()
 
-  const related = article.categories?.id
-    ? await getRelatedArticles(article.categories.id, article.slug)
-    : []
+  const related = await getSuggestions(article.categories?.id || null, article.slug)
 
   return (
     <article className="max-w-4xl mx-auto py-10 px-4">
@@ -85,7 +86,7 @@ export default async function ArticlePage({ params }: { params: { slug: string }
         {article.title}
       </h1>
 
-      {/* Meta info */}
+      {/* Meta */}
       <div className="flex flex-wrap items-center gap-3 text-sm text-muted-foreground mb-6">
         {article.authors?.name && (
           <span className="flex items-center gap-2">
@@ -118,7 +119,7 @@ export default async function ArticlePage({ params }: { params: { slug: string }
         {article.reading_time && <span>• {article.reading_time} min read</span>}
       </div>
 
-      {/* Featured image */}
+      {/* Image */}
       {article.featured_image && (
         <div className="relative w-full h-[400px] md:h-[500px] mb-8 overflow-hidden rounded-2xl shadow-sm">
           <Image
@@ -131,17 +132,19 @@ export default async function ArticlePage({ params }: { params: { slug: string }
         </div>
       )}
 
-      {/* Article content */}
+      {/* Content */}
       <div className="prose prose-lg dark:prose-invert max-w-none mb-16">
         <ReactMarkdown remarkPlugins={[remarkGfm]}>
           {article.content || "_No content available._"}
         </ReactMarkdown>
       </div>
 
-      {/* Related Articles Section */}
+      {/* Related or Recent */}
       {related.length > 0 && (
         <section className="mt-12 border-t border-border pt-8">
-          <h2 className="text-2xl font-bold mb-6 text-foreground">Related Articles</h2>
+          <h2 className="text-2xl font-bold mb-6 text-foreground">
+            {article.categories?.name ? "Related Articles" : "Recent Articles"}
+          </h2>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             {related.map((r) => (
               <Link
