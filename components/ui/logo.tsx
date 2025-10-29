@@ -32,34 +32,21 @@ export default function Logo({
 
   return (
     <div className={`flex items-center gap-2 ${className}`}>
-      <div className="relative flex items-center justify-center">
-        {!imageError ? (
-          <>
-            <Image
-              src="/logo-light.png"
-              alt="Amass Tech Hub Logo"
-              width={sizes[size]}
-              height={sizes[size]}
-              className="block dark:hidden object-contain"
-              onError={() => setImageError(true)}
-              priority
-            />
-            <Image
-              src="/logo-dark.png"
-              alt="Amass Tech Hub Logo"
-              width={sizes[size]}
-              height={sizes[size]}
-              className="hidden dark:block object-contain"
-              onError={() => setImageError(true)}
-              priority
-            />
-          </>
-        ) : (
-          <div className="bg-primary text-accent font-extrabold rounded-lg flex items-center justify-center w-10 h-10">
-            A
-          </div>
-        )}
-      </div>
+      {!imageError ? (
+        <Image
+          src="/logo.png"
+          alt="Amass Tech Hub Logo"
+          width={sizes[size]}
+          height={sizes[size]}
+          className="object-contain"
+          onError={() => setImageError(true)}
+          priority
+        />
+      ) : (
+        <div className="bg-primary text-accent font-extrabold rounded-lg flex items-center justify-center w-10 h-10">
+          A
+        </div>
+      )}
 
       {showText && (
         <span
