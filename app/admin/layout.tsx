@@ -27,27 +27,26 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   if (!session) return null
 
   return (
-    <div className="flex min-h-screen bg-background text-foreground">
-      {/* Sidebar (hidden on mobile unless toggled) */}
-      <div
-        className={`fixed md:relative z-40 transition-transform duration-300 ${
-          sidebarOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0"
-        }`}
+    <div className="flex min-h-screen bg-background text-foreground relative">
+      {/* Sidebar */}
+      <aside
+        className={`fixed md:relative z-40 h-full transition-transform duration-300 bg-background border-r border-border
+        ${sidebarOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0"}`}
       >
         <AdminSidebar />
-      </div>
+      </aside>
 
       {/* Overlay for mobile */}
       {sidebarOpen && (
         <div
-          onClick={() => setSidebarOpen(false)}
           className="fixed inset-0 bg-black/40 z-30 md:hidden"
+          onClick={() => setSidebarOpen(false)}
         />
       )}
 
-      {/* Main content */}
+      {/* Main Content */}
       <div className="flex-1 flex flex-col min-w-0">
-        <AdminHeader />
+        <AdminHeader onMenuClick={() => setSidebarOpen((v) => !v)} />
         <main className="flex-1 overflow-y-auto p-4 md:p-8 fade-in">
           {children}
         </main>
