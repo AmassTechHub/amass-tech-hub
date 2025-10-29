@@ -31,44 +31,35 @@ export default function Logo({
   }
 
   return (
-    <div
-      className={`flex items-center gap-2 whitespace-nowrap ${className}`}
-      aria-label="Amass Tech Hub Logo"
-    >
-      {/* Logo Image */}
-      <div className={`${sizeClasses[size]} flex items-center justify-center`}>
+    <div className={`flex items-center gap-2 ${className}`}>
+      <div className={`${sizeClasses[size]} relative flex items-center justify-center`}>
         {!imageError ? (
           <>
+            {/* Light Mode */}
             <Image
               src="/logo-light.png"
               alt="Amass Tech Hub Logo"
-              width={48}
-              height={48}
-              unoptimized
-              className={`block dark:hidden ${sizeClasses[size]} object-contain`}
+              fill
+              className="object-contain block dark:hidden"
               onError={() => setImageError(true)}
               priority
             />
+            {/* Dark Mode */}
             <Image
               src="/logo-dark.png"
               alt="Amass Tech Hub Logo"
-              width={48}
-              height={48}
-              className={`hidden dark:block ${sizeClasses[size]} object-contain`}
+              fill
+              className="object-contain hidden dark:block"
               onError={() => setImageError(true)}
               priority
             />
           </>
         ) : (
-          <div
-            className={`${sizeClasses[size]} bg-primary rounded-xl flex items-center justify-center`}
-          >
-            <span className="text-accent font-extrabold text-lg">A</span>
+          <div className="bg-primary text-accent font-extrabold rounded-lg flex items-center justify-center w-full h-full">
+            A
           </div>
         )}
       </div>
-
-      {/* Text — Always horizontal, color swaps by theme */}
       {showText && (
         <span
           className={`font-extrabold tracking-tight ${textSizes[size]} transition-colors text-[#3c0a6b] dark:text-[#d6a51b]`}
