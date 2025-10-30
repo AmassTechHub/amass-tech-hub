@@ -1,14 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase'
 
-// GET single article by ID or slug
+// ✅ Next.js 16 requires params to be awaited (Promise-based)
+
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  context: { params: Promise<{ id: string }> }
 ) {
-  try {
-    const { id } = params
+  const { id } = await context.params
 
+  try {
     const { data, error } = await supabaseAdmin
       .from('articles')
       .select(`
@@ -42,36 +43,36 @@ export async function GET(
   }
 }
 
-// PUT update article
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  context: { params: Promise<{ id: string }> }
 ) {
+  const { id } = await context.params
+
   try {
-    const { id } = params
     const body = await request.json()
-    const { 
-      title, 
-      content, 
-      excerpt, 
-      category_id, 
-      author_id, 
-      featured_image, 
-      tags, 
-      featured, 
+    const {
+      title,
+      content,
+      excerpt,
+      category_id,
+      author_id,
+      featured_image,
+      tags,
+      featured,
       status,
       seo_title,
-      seo_description
+      seo_description,
     } = body
 
-    // Calculate reading time if content changed
     let updateData: any = { ...body }
+
+    // Compute reading time if content present
     if (content) {
       const wordCount = content.split(/\s+/).length
       updateData.reading_time = Math.max(1, Math.ceil(wordCount / 200))
     }
 
-    // Update published_at if status changed to published
     if (status === 'published') {
       updateData.published_at = new Date().toISOString()
     }
@@ -109,18 +110,14 @@ export async function PUT(
   }
 }
 
-// DELETE article
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  context: { params: Promise<{ id: string }> }
 ) {
-  try {
-    const { id } = params
+  const { id } = await context.params
 
-    const { error } = await supabaseAdmin
-      .from('articles')
-      .delete()
-      .eq('id', id)
+  try {
+    const { error } = await supabaseAdmin.from('articles').delete().eq('id', id)
 
     if (error) {
       console.error('Database error:', error)
