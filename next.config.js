@@ -1,10 +1,13 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  // Explicitly disable Turbopack
+  // Disable Turbopack and configure webpack
   experimental: {
     turbo: false,
+    webpackBuildWorker: true,
     optimizePackageImports: ['lucide-react', '@radix-ui/react-dialog'],
   },
+  // Force webpack 5
+  webpack5: true,
   reactStrictMode: true,
   // Explicitly set the build tool to webpack
   webpack: (config, { isServer }) => {
