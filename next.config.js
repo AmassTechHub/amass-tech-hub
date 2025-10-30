@@ -1,6 +1,19 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   reactStrictMode: true,
+  // Explicitly set the build tool to webpack
+  webpack: (config, { isServer }) => {
+    // Add any webpack configurations here if needed
+    if (!isServer) {
+      config.resolve.fallback = {
+        ...config.resolve.fallback,
+        fs: false,
+        net: false,
+        tls: false,
+      };
+    }
+    return config;
+  },
   images: {
     remotePatterns: [
       {
@@ -17,10 +30,6 @@ const nextConfig = {
       }
     ],
     formats: ['image/avif', 'image/webp'],
-  },
-  // Enable Turbopack
-  experimental: {
-    turbo: {}
   },
   // Add security headers
   async headers() {
@@ -49,43 +58,13 @@ const nextConfig = {
     NEXT_PUBLIC_SUPABASE_URL: process.env.NEXT_PUBLIC_SUPABASE_URL,
     NEXT_PUBLIC_SUPABASE_ANON_KEY: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
   },
-  // Disable React's legacy context API
-  reactStrictMode: true,
-  // Disable webpack optimizations in favor of Turbopack
-  webpack: (config, { isServer }) => {
-    if (!isServer) {
-      config.resolve.fallback = {
-        ...config.resolve.fallback,
-        fs: false,
-        net: false,
-        tls: false,
-      };
-    }
-    return config;
-  },
   // Enable static exports for full static site generation
   output: 'standalone',
-  // Enable React DevTools in production
-  reactDevOverlay: false,
   // Disable ETag generation
   generateEtags: false,
   // Optimize package imports
   experimental: {
     optimizePackageImports: ['lucide-react', '@radix-ui/react-dialog'],
-  },
-  // Enable webpack optimizations
-  webpack: (config, { isServer }) => {
-    // Add custom webpack configurations here
-    if (!isServer) {
-      // Don't include certain packages in the client build
-      config.resolve.fallback = {
-        ...config.resolve.fallback,
-        fs: false,
-        net: false,
-        tls: false,
-      };
-    }
-    return config;
   },
 };
 
