@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
-import { Plus, Loader2, Search, Edit, Trash2, ExternalLink } from "lucide-react"
+import { Plus, Loader2, Search, Edit, Trash2, BookOpen } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
@@ -22,25 +22,22 @@ interface Category {
   name: string;
 }
 
-interface ToolWithCategory {
+interface KnowledgeBaseArticle {
   id: string;
-  name: string;
-  description: string | null;
-  url: string;
-  icon_url: string | null;
-  featured: boolean;
-  created_at: string;
-  updated_at: string;
+  title: string;
+  slug: string;
+  content: string;
   category_id: string | null;
   categories: Category | null;
   tags: string[];
   status: 'draft' | 'published' | 'archived';
-  rating?: number;
-  pricing?: string;
+  created_at: string;
+  updated_at: string;
+  published_at: string | null;
 }
 
-export default function ToolsPage() {
-  const [tools, setTools] = useState<ToolWithCategory[]>([])
+export default function KnowledgeBasePage() {
+  const [articles, setArticles] = useState<KnowledgeBaseArticle[]>([])
   const [loading, setLoading] = useState(true)
   const [searchQuery, setSearchQuery] = useState("")
   const [categories, setCategories] = useState<{id: string, name: string}[]>([])
@@ -50,24 +47,24 @@ export default function ToolsPage() {
 
   useEffect(() => {
     fetchCategories()
-    fetchTools()
+    fetchArticles()
   }, [])
 
   const fetchCategories = async () => {
     const { data, error } = await supabase
       .from('categories')
       .select('id, name')
-      .eq('type', 'tool')
+      .eq('type', 'knowledge_base')
       .order('name')
     
     if (data) setCategories(data)
   }
 
-  const fetchTools = async () => {
+  const fetchArticles = async () => {
     try {
       setLoading(true)
       let query = supabase
-        .from('tools')
+        .from('knowledge_base')
         .select(`
           *,
           categories (name)
@@ -79,59 +76,62 @@ export default function ToolsPage() {
       }
 
       if (searchQuery) {
-        query = query.ilike('name', `%${searchQuery}%`)
+        query = query.ilike('title', `%${searchQuery}%`)
       }
 
       const { data, error } = await query
 
       if (error) throw error
-      setTools(data || [])
+      setArticles(data || [])
     } catch (error) {
-      console.error("Error fetching tools:", error)
+      console.error("Error fetching articles:", error)
+      toast({
+        title: "Error",
+        description: "Failed to load knowledge base articles. Please try again.",
+        variant: "destructive",
+      })
     } finally {
       setLoading(false)
     }
   }
 
   const handleDelete = async (id: string) => {
-    if (!confirm("Are you sure you want to delete this tool?")) return;
+    if (!confirm("Are you sure you want to delete this article?")) return;
     
     try {
       const { error } = await supabase
-        .from('tools')
+        .from('knowledge_base')
         .delete()
         .eq('id', id);
       
       if (error) throw error;
       
-      setTools(tools.filter((tool) => tool.id !== id));
+      setArticles(articles.filter((article) => article.id !== id));
       toast({
         title: "Success",
-        description: "Tool deleted successfully.",
+        description: "Article deleted successfully.",
       });
     } catch (error) {
-      console.error("Error deleting tool:", error);
+      console.error("Error deleting article:", error);
       toast({
         title: "Error",
-        description: "Failed to delete tool. Please try again.",
+        description: "Failed to delete article. Please try again.",
         variant: "destructive",
       });
     }
   }
 
-  const filteredTools = searchQuery.trim() === "" && !selectedCategory
-    ? tools
-    : tools.filter((tool) => {
+  const filteredArticles = searchQuery.trim() === "" && !selectedCategory
+    ? articles
+    : articles.filter((article) => {
         const searchLower = searchQuery.toLowerCase();
         const matchesSearch = searchQuery === "" ||
-          tool.name.toLowerCase().includes(searchLower) ||
-          (tool.description?.toLowerCase().includes(searchLower) ?? false) ||
-          (tool.categories?.name.toLowerCase().includes(searchLower) ?? false) ||
-          (Array.isArray(tool.tags) && tool.tags.some(tag => 
-            typeof tag === 'string' && tag.toLowerCase().includes(searchLower)
-          ));
+          article.title.toLowerCase().includes(searchLower) ||
+          (article.content?.toLowerCase().includes(searchLower) ?? false) ||
+          (article.categories?.name.toLowerCase().includes(searchLower) ?? false) ||
+          (article.tags?.some(tag => typeof tag === 'string' && tag.toLowerCase().includes(searchLower)) ?? false);
         
-        const matchesCategory = !selectedCategory || tool.category_id === selectedCategory;
+        const matchesCategory = !selectedCategory || article.category_id === selectedCategory;
         
         return matchesSearch && matchesCategory;
       });
@@ -148,16 +148,16 @@ export default function ToolsPage() {
     <div className="space-y-6">
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div>
-          <h1 className="text-2xl font-bold">Tools</h1>
+          <h1 className="text-2xl font-bold">Knowledge Base</h1>
           <p className="text-muted-foreground">
-            Manage your tech tools and resources
+            Manage your knowledge base articles
           </p>
         </div>
         <div className="flex flex-col sm:flex-row gap-3 w-full md:w-auto">
           <div className="relative w-full sm:w-64">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input
-              placeholder="Search tools..."
+              placeholder="Search articles..."
               className="pl-10 w-full"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
@@ -176,11 +176,11 @@ export default function ToolsPage() {
             ))}
           </select>
           <Button 
-            onClick={() => router.push("/admin/tools/new")} 
+            onClick={() => router.push("/admin/knowledge-base/new")} 
             className="w-full sm:w-auto"
           >
             <Plus className="mr-2 h-4 w-4" />
-            Add Tool
+            New Article
           </Button>
         </div>
       </div>
@@ -189,68 +189,65 @@ export default function ToolsPage() {
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead>Name</TableHead>
+              <TableHead>Title</TableHead>
               <TableHead>Category</TableHead>
               <TableHead>Status</TableHead>
-              <TableHead>URL</TableHead>
-              <TableHead>Featured</TableHead>
-              <TableHead>Created</TableHead>
+              <TableHead>Tags</TableHead>
+              <TableHead>Last Updated</TableHead>
               <TableHead className="text-right">Actions</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
-            {filteredTools.length > 0 ? (
-              filteredTools.map((tool) => (
-                <TableRow key={tool.id}>
+            {filteredArticles.length > 0 ? (
+              filteredArticles.map((article) => (
+                <TableRow key={article.id}>
                   <TableCell className="font-medium">
                     <div className="flex items-center gap-2">
-                      {tool.icon_url && (
-                        <img 
-                          src={tool.icon_url} 
-                          alt={tool.name}
-                          className="w-8 h-8 rounded-md object-cover"
-                        />
-                      )}
-                      <span>{tool.name}</span>
+                      <BookOpen className="w-4 h-4 text-muted-foreground" />
+                      <span>{article.title}</span>
                     </div>
                   </TableCell>
                   <TableCell>
-                    {tool.categories?.name || "-"}
+                    {article.categories?.name || "-"}
                   </TableCell>
                   <TableCell>
-                    <Badge variant={tool.status === 'published' ? 'default' : 'secondary'}>
-                      {tool.status || 'draft'}
+                    <Badge variant={article.status === 'published' ? 'default' : 'secondary'}>
+                      {article.status || 'draft'}
                     </Badge>
                   </TableCell>
                   <TableCell>
-                    <a 
-                      href={tool.url} 
-                      target="_blank" 
-                      rel="noopener noreferrer"
-                      className="text-blue-600 hover:underline flex items-center gap-1"
-                    >
-                      Visit <ExternalLink className="w-3 h-3" />
-                    </a>
+                    <div className="flex flex-wrap gap-1 max-w-[200px]">
+                      {Array.isArray(article.tags) && article.tags.slice(0, 2).map((tag, i) => (
+                        <Badge key={i} variant="outline" className="truncate">
+                          {tag}
+                        </Badge>
+                      ))}
+                      {Array.isArray(article.tags) && article.tags.length > 2 && (
+                        <Badge variant="outline" className="px-1.5">
+                          +{article.tags.length - 2}
+                        </Badge>
+                      )}
+                    </div>
                   </TableCell>
                   <TableCell>
-                    {new Date(tool.created_at).toLocaleDateString()}
+                    {new Date(article.updated_at).toLocaleDateString()}
                   </TableCell>
                   <TableCell className="text-right">
                     <div className="flex justify-end gap-2">
                       <Button
                         variant="ghost"
                         size="icon"
-                        onClick={() => router.push(`/admin/tools/${tool.id}`)}
-                        aria-label="Edit tool"
+                        onClick={() => router.push(`/admin/knowledge-base/${article.id}`)}
+                        aria-label="Edit article"
                       >
                         <Edit className="w-4 h-4" />
                       </Button>
                       <Button
                         variant="ghost"
                         size="icon"
-                        onClick={() => handleDelete(tool.id)}
+                        onClick={() => handleDelete(article.id)}
                         className="text-destructive hover:text-destructive/80"
-                        aria-label="Delete tool"
+                        aria-label="Delete article"
                       >
                         <Trash2 className="w-4 h-4" />
                       </Button>
@@ -260,8 +257,8 @@ export default function ToolsPage() {
               ))
             ) : (
               <TableRow>
-                <TableCell colSpan={7} className="h-24 text-center text-muted-foreground">
-                  {tools.length === 0 ? 'No tools found. Add your first tool!' : 'No tools match your search criteria.'}
+                <TableCell colSpan={6} className="h-24 text-center text-muted-foreground">
+                  {articles.length === 0 ? 'No articles found. Add your first article!' : 'No articles match your search criteria.'}
                 </TableCell>
               </TableRow>
             )}

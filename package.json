@@ -3,10 +3,23 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "build": "next build",
     "dev": "next dev",
-    "lint": "eslint .",
-    "start": "next start"
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint",
+    "format": "prettier --write .",
+    "check-types": "tsc --noEmit",
+    "prepare": "husky install",
+    "test": "jest",
+    "test:watch": "jest --watch",
+    "test:coverage": "jest --coverage",
+    "db:migrate": "npx supabase db push",
+    "db:reset": "npx supabase db reset",
+    "db:studio": "npx supabase studio",
+    "analyze": "ANALYZE=true next build",
+    "preview": "next build && next start",
+    "deploy:staging": "vercel --target staging",
+    "deploy:production": "vercel --prod"
   },
   "dependencies": {
     "@auth/supabase-adapter": "^1.11.1",

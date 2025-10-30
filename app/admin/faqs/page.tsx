@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
-import { Plus, Loader2, Search, Edit, Trash2, ExternalLink } from "lucide-react"
+import { Plus, Loader2, Search, Edit, Trash2, HelpCircle } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
@@ -22,25 +22,20 @@ interface Category {
   name: string;
 }
 
-interface ToolWithCategory {
+interface FAQItem {
   id: string;
-  name: string;
-  description: string | null;
-  url: string;
-  icon_url: string | null;
-  featured: boolean;
-  created_at: string;
-  updated_at: string;
+  question: string;
+  answer: string;
   category_id: string | null;
   categories: Category | null;
-  tags: string[];
+  order_index: number;
   status: 'draft' | 'published' | 'archived';
-  rating?: number;
-  pricing?: string;
+  created_at: string;
+  updated_at: string;
 }
 
-export default function ToolsPage() {
-  const [tools, setTools] = useState<ToolWithCategory[]>([])
+export default function FAQPage() {
+  const [faqs, setFaqs] = useState<FAQItem[]>([])
   const [loading, setLoading] = useState(true)
   const [searchQuery, setSearchQuery] = useState("")
   const [categories, setCategories] = useState<{id: string, name: string}[]>([])
@@ -50,88 +45,136 @@ export default function ToolsPage() {
 
   useEffect(() => {
     fetchCategories()
-    fetchTools()
+    fetchFAQs()
   }, [])
 
   const fetchCategories = async () => {
     const { data, error } = await supabase
       .from('categories')
       .select('id, name')
-      .eq('type', 'tool')
+      .eq('type', 'faq')
       .order('name')
     
     if (data) setCategories(data)
   }
 
-  const fetchTools = async () => {
+  const fetchFAQs = async () => {
     try {
       setLoading(true)
       let query = supabase
-        .from('tools')
+        .from('faqs')
         .select(`
           *,
           categories (name)
         `)
-        .order('created_at', { ascending: false })
+        .order('order_index', { ascending: true })
 
       if (selectedCategory) {
         query = query.eq('category_id', selectedCategory)
       }
 
       if (searchQuery) {
-        query = query.ilike('name', `%${searchQuery}%`)
+        query = query.or(`question.ilike.%${searchQuery}%,answer.ilike.%${searchQuery}%`)
       }
 
       const { data, error } = await query
 
       if (error) throw error
-      setTools(data || [])
+      setFaqs(data || [])
     } catch (error) {
-      console.error("Error fetching tools:", error)
+      console.error("Error fetching FAQs:", error)
+      toast({
+        title: "Error",
+        description: "Failed to load FAQs. Please try again.",
+        variant: "destructive",
+      })
     } finally {
       setLoading(false)
     }
   }
 
   const handleDelete = async (id: string) => {
-    if (!confirm("Are you sure you want to delete this tool?")) return;
+    if (!confirm("Are you sure you want to delete this FAQ?")) return;
     
     try {
       const { error } = await supabase
-        .from('tools')
+        .from('faqs')
         .delete()
         .eq('id', id);
       
       if (error) throw error;
       
-      setTools(tools.filter((tool) => tool.id !== id));
+      setFaqs(faqs.filter((faq) => faq.id !== id));
       toast({
         title: "Success",
-        description: "Tool deleted successfully.",
+        description: "FAQ deleted successfully.",
       });
     } catch (error) {
-      console.error("Error deleting tool:", error);
+      console.error("Error deleting FAQ:", error);
       toast({
         title: "Error",
-        description: "Failed to delete tool. Please try again.",
+        description: "Failed to delete FAQ. Please try again.",
         variant: "destructive",
       });
     }
   }
 
-  const filteredTools = searchQuery.trim() === "" && !selectedCategory
-    ? tools
-    : tools.filter((tool) => {
+  const updateFAQOrder = async (id: string, newOrder: number) => {
+    try {
+      const { error } = await supabase
+        .from('faqs')
+        .update({ order_index: newOrder })
+        .eq('id', id);
+      
+      if (error) throw error;
+      
+      // Refresh the list
+      fetchFAQs();
+    } catch (error) {
+      console.error("Error updating FAQ order:", error);
+    }
+  };
+
+  const handleMoveUp = (index: number) => {
+    if (index === 0) return;
+    
+    const newFAQs = [...faqs];
+    const temp = newFAQs[index].order_index;
+    newFAQs[index].order_index = newFAQs[index - 1].order_index;
+    newFAQs[index - 1].order_index = temp;
+    
+    setFaqs(newFAQs.sort((a, b) => a.order_index - b.order_index));
+    
+    // Update in database
+    updateFAQOrder(newFAQs[index].id, newFAQs[index].order_index);
+    updateFAQOrder(newFAQs[index - 1].id, newFAQs[index - 1].order_index);
+  };
+
+  const handleMoveDown = (index: number) => {
+    if (index === faqs.length - 1) return;
+    
+    const newFAQs = [...faqs];
+    const temp = newFAQs[index].order_index;
+    newFAQs[index].order_index = newFAQs[index + 1].order_index;
+    newFAQs[index + 1].order_index = temp;
+    
+    setFaqs(newFAQs.sort((a, b) => a.order_index - b.order_index));
+    
+    // Update in database
+    updateFAQOrder(newFAQs[index].id, newFAQs[index].order_index);
+    updateFAQOrder(newFAQs[index + 1].id, newFAQs[index + 1].order_index);
+  };
+
+  const filteredFAQs = searchQuery.trim() === "" && !selectedCategory
+    ? faqs
+    : faqs.filter((faq) => {
         const searchLower = searchQuery.toLowerCase();
         const matchesSearch = searchQuery === "" ||
-          tool.name.toLowerCase().includes(searchLower) ||
-          (tool.description?.toLowerCase().includes(searchLower) ?? false) ||
-          (tool.categories?.name.toLowerCase().includes(searchLower) ?? false) ||
-          (Array.isArray(tool.tags) && tool.tags.some(tag => 
-            typeof tag === 'string' && tag.toLowerCase().includes(searchLower)
-          ));
+          faq.question.toLowerCase().includes(searchLower) ||
+          faq.answer.toLowerCase().includes(searchLower) ||
+          (faq.categories?.name.toLowerCase().includes(searchLower) ?? false);
         
-        const matchesCategory = !selectedCategory || tool.category_id === selectedCategory;
+        const matchesCategory = !selectedCategory || faq.category_id === selectedCategory;
         
         return matchesSearch && matchesCategory;
       });
@@ -148,16 +191,16 @@ export default function ToolsPage() {
     <div className="space-y-6">
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div>
-          <h1 className="text-2xl font-bold">Tools</h1>
+          <h1 className="text-2xl font-bold">FAQs</h1>
           <p className="text-muted-foreground">
-            Manage your tech tools and resources
+            Manage frequently asked questions
           </p>
         </div>
         <div className="flex flex-col sm:flex-row gap-3 w-full md:w-auto">
           <div className="relative w-full sm:w-64">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input
-              placeholder="Search tools..."
+              placeholder="Search FAQs..."
               className="pl-10 w-full"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
@@ -176,11 +219,11 @@ export default function ToolsPage() {
             ))}
           </select>
           <Button 
-            onClick={() => router.push("/admin/tools/new")} 
+            onClick={() => router.push("/admin/faqs/new")} 
             className="w-full sm:w-auto"
           >
             <Plus className="mr-2 h-4 w-4" />
-            Add Tool
+            New FAQ
           </Button>
         </div>
       </div>
@@ -189,68 +232,73 @@ export default function ToolsPage() {
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead>Name</TableHead>
+              <TableHead className="w-12">#</TableHead>
+              <TableHead>Question</TableHead>
               <TableHead>Category</TableHead>
               <TableHead>Status</TableHead>
-              <TableHead>URL</TableHead>
-              <TableHead>Featured</TableHead>
-              <TableHead>Created</TableHead>
-              <TableHead className="text-right">Actions</TableHead>
+              <TableHead className="w-24">Actions</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
-            {filteredTools.length > 0 ? (
-              filteredTools.map((tool) => (
-                <TableRow key={tool.id}>
+            {filteredFAQs.length > 0 ? (
+              filteredFAQs.map((faq, index) => (
+                <TableRow key={faq.id}>
                   <TableCell className="font-medium">
-                    <div className="flex items-center gap-2">
-                      {tool.icon_url && (
-                        <img 
-                          src={tool.icon_url} 
-                          alt={tool.name}
-                          className="w-8 h-8 rounded-md object-cover"
-                        />
-                      )}
-                      <span>{tool.name}</span>
+                    <div className="flex flex-col items-center gap-1">
+                      <button 
+                        onClick={() => handleMoveUp(index)}
+                        disabled={index === 0}
+                        className="disabled:opacity-30"
+                        aria-label="Move up"
+                      >
+                        ↑
+                      </button>
+                      <span>{index + 1}</span>
+                      <button 
+                        onClick={() => handleMoveDown(index)}
+                        disabled={index === filteredFAQs.length - 1}
+                        className="disabled:opacity-30"
+                        aria-label="Move down"
+                      >
+                        ↓
+                      </button>
                     </div>
                   </TableCell>
                   <TableCell>
-                    {tool.categories?.name || "-"}
+                    <div className="flex items-center gap-2">
+                      <HelpCircle className="w-4 h-4 text-muted-foreground" />
+                      <div>
+                        <div className="font-medium">{faq.question}</div>
+                        <div className="text-sm text-muted-foreground line-clamp-1">
+                          {faq.answer.replace(/<[^>]*>?/gm, '')}
+                        </div>
+                      </div>
+                    </div>
                   </TableCell>
                   <TableCell>
-                    <Badge variant={tool.status === 'published' ? 'default' : 'secondary'}>
-                      {tool.status || 'draft'}
+                    {faq.categories?.name || "-"}
+                  </TableCell>
+                  <TableCell>
+                    <Badge variant={faq.status === 'published' ? 'default' : 'secondary'}>
+                      {faq.status || 'draft'}
                     </Badge>
                   </TableCell>
                   <TableCell>
-                    <a 
-                      href={tool.url} 
-                      target="_blank" 
-                      rel="noopener noreferrer"
-                      className="text-blue-600 hover:underline flex items-center gap-1"
-                    >
-                      Visit <ExternalLink className="w-3 h-3" />
-                    </a>
-                  </TableCell>
-                  <TableCell>
-                    {new Date(tool.created_at).toLocaleDateString()}
-                  </TableCell>
-                  <TableCell className="text-right">
                     <div className="flex justify-end gap-2">
                       <Button
                         variant="ghost"
                         size="icon"
-                        onClick={() => router.push(`/admin/tools/${tool.id}`)}
-                        aria-label="Edit tool"
+                        onClick={() => router.push(`/admin/faqs/${faq.id}`)}
+                        aria-label="Edit FAQ"
                       >
                         <Edit className="w-4 h-4" />
                       </Button>
                       <Button
                         variant="ghost"
                         size="icon"
-                        onClick={() => handleDelete(tool.id)}
+                        onClick={() => handleDelete(faq.id)}
                         className="text-destructive hover:text-destructive/80"
-                        aria-label="Delete tool"
+                        aria-label="Delete FAQ"
                       >
                         <Trash2 className="w-4 h-4" />
                       </Button>
@@ -260,8 +308,8 @@ export default function ToolsPage() {
               ))
             ) : (
               <TableRow>
-                <TableCell colSpan={7} className="h-24 text-center text-muted-foreground">
-                  {tools.length === 0 ? 'No tools found. Add your first tool!' : 'No tools match your search criteria.'}
+                <TableCell colSpan={5} className="h-24 text-center text-muted-foreground">
+                  {faqs.length === 0 ? 'No FAQs found. Add your first FAQ!' : 'No FAQs match your search criteria.'}
                 </TableCell>
               </TableRow>
             )}
