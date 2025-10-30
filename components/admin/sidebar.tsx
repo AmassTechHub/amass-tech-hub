@@ -48,12 +48,8 @@ export default function AdminSidebar() {
     { icon: BookText, label: "Knowledge Base", href: "/admin/knowledge-base" },
     { icon: FileQuestion, label: "FAQs", href: "/admin/faqs" },
     { icon: Users, label: "Users", href: "/admin/users" },
-    { icon: MessageSquare, label: "Comments", href: "/admin/comments" },
-    { icon: Bookmark, label: "Categories", href: "/admin/categories" },
     { icon: FileCode, label: "Custom Code", href: "/admin/custom-code" },
-    { icon: MediaIcon, label: "Media Library", href: "/admin/media" },
-    { icon: BarChart3, label: "Analytics", href: "/admin/analytics" },
-    { icon: Settings, label: "Settings", href: "/admin/settings" },
+    { icon: Settings, label: "Debug", href: "/admin/debug" },
   ]
 
   return (

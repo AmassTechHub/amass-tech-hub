@@ -1,28 +1,15 @@
-"use client"
+'use client';
 
-import { useState, useEffect } from "react"
-import { useRouter } from "next/navigation"
-import { Plus, Loader2, Search, Edit, Trash2, ExternalLink } from "lucide-react"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Badge } from "@/components/ui/badge"
-import { toast } from "@/components/ui/use-toast"
-import { createClient } from "@/lib/supabase/client"
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table"
+import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
+import { Plus } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { ColumnDef } from '@tanstack/react-table';
+import { AdminPage } from '@/components/admin/AdminPage';
+import { AdminDataTable } from '@/components/admin/AdminDataTable';
+import { fetchTableData, updateStatus } from '@/lib/admin/data-fetching';
 
-interface Category {
-  id: string;
-  name: string;
-}
-
-interface ToolWithCategory {
+interface Tool {
   id: string;
   name: string;
   description: string | null;
@@ -31,243 +18,138 @@ interface ToolWithCategory {
   featured: boolean;
   created_at: string;
   updated_at: string;
-  category_id: string | null;
-  categories: Category | null;
-  tags: string[];
+  category: string | null;
   status: 'draft' | 'published' | 'archived';
   rating?: number;
-  pricing?: string;
 }
 
+const columns: ColumnDef<Tool>[] = [
+  {
+    accessorKey: 'name',
+    header: 'Name',
+  },
+  {
+    accessorKey: 'category',
+    header: 'Category',
+  },
+  {
+    accessorKey: 'url',
+    header: 'URL',
+    cell: ({ row }) => (
+      <a 
+        href={row.getValue('url')} 
+        target="_blank" 
+        rel="noopener noreferrer"
+        className="text-blue-500 hover:underline"
+      >
+        View
+      </a>
+    ),
+  },
+  {
+    accessorKey: 'featured',
+    header: 'Featured',
+    cell: ({ row }) => (
+      <span className="capitalize">
+        {row.getValue('featured') ? 'Yes' : 'No'}
+      </span>
+    ),
+  },
+  {
+    accessorKey: 'created_at',
+    header: 'Created At',
+    cell: ({ row }) => new Date(row.getValue('created_at')).toLocaleDateString(),
+  },
+];
+
 export default function ToolsPage() {
-  const [tools, setTools] = useState<ToolWithCategory[]>([])
-  const [loading, setLoading] = useState(true)
-  const [searchQuery, setSearchQuery] = useState("")
-  const [categories, setCategories] = useState<{id: string, name: string}[]>([])
-  const [selectedCategory, setSelectedCategory] = useState<string>("")
-  const router = useRouter()
-  const supabase = createClient()
+  const [tools, setTools] = useState<Tool[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<Error | null>(null);
+  const router = useRouter();
 
   useEffect(() => {
-    fetchCategories()
-    fetchTools()
-  }, [])
-
-  const fetchCategories = async () => {
-    const { data, error } = await supabase
-      .from('categories')
-      .select('id, name')
-      .eq('type', 'tool')
-      .order('name')
-    
-    if (data) setCategories(data)
-  }
+    fetchTools();
+  }, []);
 
   const fetchTools = async () => {
     try {
-      setLoading(true)
-      let query = supabase
-        .from('tools')
-        .select(`
-          *,
-          categories (name)
-        `)
-        .order('created_at', { ascending: false })
-
-      if (selectedCategory) {
-        query = query.eq('category_id', selectedCategory)
-      }
-
-      if (searchQuery) {
-        query = query.ilike('name', `%${searchQuery}%`)
-      }
-
-      const { data, error } = await query
-
-      if (error) throw error
-      setTools(data || [])
-    } catch (error) {
-      console.error("Error fetching tools:", error)
+      setIsLoading(true);
+      const { data, error } = await fetchTableData<Tool>('tools');
+      
+      if (error) throw error;
+      
+      setTools(data || []);
+      setError(null);
+    } catch (err) {
+      console.error('Error fetching tools:', err);
+      setError(err instanceof Error ? err : new Error('Failed to load tools'));
     } finally {
-      setLoading(false)
+      setIsLoading(false);
     }
-  }
+  };
+
+  const handleStatusChange = async (id: string, status: string) => {
+    try {
+      const { data, error } = await updateStatus<Tool>('tools', id, status);
+      
+      if (error) throw error;
+      
+      setTools(tools.map(tool => 
+        tool.id === id ? { ...tool, status } : tool
+      ));
+    } catch (err) {
+      console.error('Error updating tool status:', err);
+      throw err;
+    }
+  };
 
   const handleDelete = async (id: string) => {
-    if (!confirm("Are you sure you want to delete this tool?")) return;
+    if (!confirm('Are you sure you want to delete this tool?')) return;
     
     try {
+      const supabase = (await import('@/lib/supabase/client')).default;
       const { error } = await supabase
         .from('tools')
         .delete()
         .eq('id', id);
-      
+
       if (error) throw error;
       
-      setTools(tools.filter((tool) => tool.id !== id));
-      toast({
-        title: "Success",
-        description: "Tool deleted successfully.",
-      });
-    } catch (error) {
-      console.error("Error deleting tool:", error);
-      toast({
-        title: "Error",
-        description: "Failed to delete tool. Please try again.",
-        variant: "destructive",
-      });
+      setTools(tools.filter(tool => tool.id !== id));
+    } catch (err) {
+      console.error('Error deleting tool:', err);
+      throw err;
     }
-  }
-
-  const filteredTools = searchQuery.trim() === "" && !selectedCategory
-    ? tools
-    : tools.filter((tool) => {
-        const searchLower = searchQuery.toLowerCase();
-        const matchesSearch = searchQuery === "" ||
-          tool.name.toLowerCase().includes(searchLower) ||
-          (tool.description?.toLowerCase().includes(searchLower) ?? false) ||
-          (tool.categories?.name.toLowerCase().includes(searchLower) ?? false) ||
-          (Array.isArray(tool.tags) && tool.tags.some(tag => 
-            typeof tag === 'string' && tag.toLowerCase().includes(searchLower)
-          ));
-        
-        const matchesCategory = !selectedCategory || tool.category_id === selectedCategory;
-        
-        return matchesSearch && matchesCategory;
-      });
-
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center h-64">
-        <Loader2 className="w-8 h-8 animate-spin" />
-      </div>
-    )
-  }
+  };
 
   return (
-    <div className="space-y-6">
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-        <div>
-          <h1 className="text-2xl font-bold">Tools</h1>
-          <p className="text-muted-foreground">
-            Manage your tech tools and resources
-          </p>
-        </div>
-        <div className="flex flex-col sm:flex-row gap-3 w-full md:w-auto">
-          <div className="relative w-full sm:w-64">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-            <Input
-              placeholder="Search tools..."
-              className="pl-10 w-full"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-            />
-          </div>
-          <select
-            className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-            value={selectedCategory}
-            onChange={(e) => setSelectedCategory(e.target.value)}
-          >
-            <option value="">All Categories</option>
-            {categories.map((category) => (
-              <option key={category.id} value={category.id}>
-                {category.name}
-              </option>
-            ))}
-          </select>
-          <Button 
-            onClick={() => router.push("/admin/tools/new")} 
-            className="w-full sm:w-auto"
-          >
-            <Plus className="mr-2 h-4 w-4" />
-            Add Tool
-          </Button>
-        </div>
-      </div>
-
-      <div className="rounded-md border">
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>Name</TableHead>
-              <TableHead>Category</TableHead>
-              <TableHead>Status</TableHead>
-              <TableHead>URL</TableHead>
-              <TableHead>Featured</TableHead>
-              <TableHead>Created</TableHead>
-              <TableHead className="text-right">Actions</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {filteredTools.length > 0 ? (
-              filteredTools.map((tool) => (
-                <TableRow key={tool.id}>
-                  <TableCell className="font-medium">
-                    <div className="flex items-center gap-2">
-                      {tool.icon_url && (
-                        <img 
-                          src={tool.icon_url} 
-                          alt={tool.name}
-                          className="w-8 h-8 rounded-md object-cover"
-                        />
-                      )}
-                      <span>{tool.name}</span>
-                    </div>
-                  </TableCell>
-                  <TableCell>
-                    {tool.categories?.name || "-"}
-                  </TableCell>
-                  <TableCell>
-                    <Badge variant={tool.status === 'published' ? 'default' : 'secondary'}>
-                      {tool.status || 'draft'}
-                    </Badge>
-                  </TableCell>
-                  <TableCell>
-                    <a 
-                      href={tool.url} 
-                      target="_blank" 
-                      rel="noopener noreferrer"
-                      className="text-blue-600 hover:underline flex items-center gap-1"
-                    >
-                      Visit <ExternalLink className="w-3 h-3" />
-                    </a>
-                  </TableCell>
-                  <TableCell>
-                    {new Date(tool.created_at).toLocaleDateString()}
-                  </TableCell>
-                  <TableCell className="text-right">
-                    <div className="flex justify-end gap-2">
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => router.push(`/admin/tools/${tool.id}`)}
-                        aria-label="Edit tool"
-                      >
-                        <Edit className="w-4 h-4" />
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => handleDelete(tool.id)}
-                        className="text-destructive hover:text-destructive/80"
-                        aria-label="Delete tool"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </Button>
-                    </div>
-                  </TableCell>
-                </TableRow>
-              ))
-            ) : (
-              <TableRow>
-                <TableCell colSpan={7} className="h-24 text-center text-muted-foreground">
-                  {tools.length === 0 ? 'No tools found. Add your first tool!' : 'No tools match your search criteria.'}
-                </TableCell>
-              </TableRow>
-            )}
-          </TableBody>
-        </Table>
-      </div>
-    </div>
+    <AdminPage 
+      title="Tools & Resources"
+      subtitle="Manage tools and resources for your community"
+      isLoading={isLoading}
+      error={error}
+      actions={
+        <Button onClick={() => router.push('/admin/tools/new')}>
+          <Plus className="mr-2 h-4 w-4" />
+          Add Tool
+        </Button>
+      }
+    >
+      <AdminDataTable
+        columns={columns}
+        data={tools}
+        searchKey="name"
+        onStatusChange={handleStatusChange}
+        onDelete={handleDelete}
+        editHref={(id) => `/admin/tools/${id}/edit`}
+        viewHref={(id) => `/tools/${id}`}
+        statusOptions={[
+          { value: 'draft', label: 'Draft' },
+          { value: 'published', label: 'Published' },
+          { value: 'archived', label: 'Archived' },
+        ]}
+      />
+    </AdminPage>
   )
 }

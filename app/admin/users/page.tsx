@@ -2,7 +2,29 @@
 
 import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
-import { Plus, Loader2, Search, Edit, Trash2, User, Shield, Mail, Calendar } from "lucide-react"
+import { 
+  Plus, 
+  Loader2, 
+  Search, 
+  Edit, 
+  Trash2, 
+  User, 
+  Shield, 
+  Mail, 
+  Calendar, 
+  UserPlus, 
+  Filter, 
+  X, 
+  Check, 
+  XCircle,
+  MoreVertical,
+  MailCheck,
+  ShieldCheck,
+  ShieldOff,
+  UserCheck,
+  UserX,
+  RefreshCw
+} from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
@@ -24,18 +46,54 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog"
+import { formatDistanceToNow, format } from "date-fns"
+import { cn } from "@/lib/utils"
+
+type UserRole = 'user' | 'editor' | 'admin'
 
 interface UserProfile {
-  id: string;
-  email: string;
-  role: 'user' | 'editor' | 'admin';
-  full_name: string | null;
-  avatar_url: string | null;
-  created_at: string;
-  last_sign_in_at: string | null;
-  is_active: boolean;
-  email_confirmed_at: string | null;
+  id: string
+  email: string
+  role: UserRole
+  full_name: string | null
+  avatar_url: string | null
+  created_at: string
+  updated_at: string
+  last_sign_in_at: string | null
+  is_active: boolean
+  email_confirmed_at: string | null
+  phone: string | null
+  metadata: Record<string, any> | null
 }
+
+const roleOptions = [
+  { value: 'user', label: 'User', icon: User },
+  { value: 'editor', label: 'Editor', icon: Edit },
+  { value: 'admin', label: 'Admin', icon: Shield },
+]
+
+const statusOptions = [
+  { value: 'active', label: 'Active' },
+  { value: 'inactive', label: 'Inactive' },
+]
 
 export default function UsersPage() {
   const [users, setUsers] = useState<UserProfile[]>([])
@@ -44,8 +102,63 @@ export default function UsersPage() {
   const [searchQuery, setSearchQuery] = useState("")
   const [roleFilter, setRoleFilter] = useState<string>("")
   const [statusFilter, setStatusFilter] = useState<string>("")
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false)
+  const [userToDelete, setUserToDelete] = useState<string | null>(null)
+  const [isDeleting, setIsDeleting] = useState(false)
+  const [isUpdatingRole, setIsUpdatingRole] = useState<string | null>(null)
+  const [isTogglingStatus, setIsTogglingStatus] = useState<string | null>(null)
+  
   const router = useRouter()
   const supabase = createClient()
+
+  // Fetch users from Supabase
+  const fetchUsers = async () => {
+    try {
+      setLoading(true)
+      const { data: { users: authUsers }, error: authError } = await supabase.auth.admin.listUsers()
+      
+      if (authError) throw authError
+      
+      // Get additional user data from public.users table
+      const { data: userProfiles, error: profileError } = await supabase
+        .from('users')
+        .select('*')
+      
+      if (profileError) throw profileError
+      
+      // Merge auth and profile data
+      const mergedUsers = authUsers.map(authUser => {
+        const profile = userProfiles?.find(up => up.id === authUser.id) || {}
+        return {
+          id: authUser.id,
+          email: authUser.email || '',
+          role: authUser.user_metadata?.role || 'user',
+          full_name: authUser.user_metadata?.full_name || '',
+          avatar_url: authUser.user_metadata?.avatar_url || null,
+          created_at: authUser.created_at,
+          updated_at: authUser.updated_at,
+          last_sign_in_at: authUser.last_sign_in_at,
+          is_active: authUser.user_metadata?.is_active ?? true,
+          email_confirmed_at: authUser.email_confirmed_at,
+          phone: authUser.phone,
+          metadata: authUser.user_metadata,
+          ...profile
+        }
+      })
+      
+      setUsers(mergedUsers)
+      setFilteredUsers(mergedUsers)
+    } catch (error) {
+      console.error('Error fetching users:', error)
+      toast({
+        title: "Error",
+        description: "Failed to load users. Please try again.",
+        variant: "destructive",
+      })
+    } finally {
+      setLoading(false)
+    }
+  }
 
   useEffect(() => {
     fetchUsers()

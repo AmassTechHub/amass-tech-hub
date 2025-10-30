@@ -2,22 +2,13 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { Plus, Edit, Trash2, Check, X, Star, Search } from 'lucide-react';
+import { Plus, Edit, Trash2, Star } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/ui/table';
-import { Badge } from '@/components/ui/badge';
-import { Checkbox } from '@/components/ui/checkbox';
 import { supabase } from '@/lib/supabase';
-import { BulkActions } from '@/components/admin/reviews/bulk-actions';
 import { toast } from '@/components/ui/use-toast';
+import { AdminPage } from '@/components/admin/AdminPage';
+import { DataTable } from '@/components/admin/DataTable';
+import { Badge } from '@/components/ui/badge';
 
 type Review = {
   id: string;
@@ -37,36 +28,33 @@ type Review = {
 export default function ReviewsAdmin() {
   const [reviews, setReviews] = useState<Review[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<Error | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
-  const [statusFilter, setStatusFilter] = useState<'all' | Review['status']>('all');
-  const [selectedReviews, setSelectedReviews] = useState<string[]>([]);
+  const [filters, setFilters] = useState({
+    status: 'all',
+  });
   const router = useRouter();
-  
-  const toggleReviewSelection = (reviewId: string) => {
-    setSelectedReviews(prev => 
-      prev.includes(reviewId)
-        ? prev.filter(id => id !== reviewId)
-        : [...prev, reviewId]
-    );
-  };
 
   useEffect(() => {
     fetchReviews();
   }, []);
 
   const fetchReviews = async () => {
+    setIsLoading(true);
+    setError(null);
+    
     try {
-      let query = supabase
+      const { data, error } = await supabase
         .from('reviews')
         .select('*')
         .order('created_at', { ascending: false });
-
-      const { data, error } = await query;
-
+      
       if (error) throw error;
+      
       setReviews(data || []);
-    } catch (error) {
-      console.error('Error fetching reviews:', error);
+    } catch (err) {
+      console.error('Error fetching reviews:', err);
+      setError(err instanceof Error ? err : new Error('Failed to load reviews'));
       toast({
         title: 'Error',
         description: 'Failed to load reviews. Please try again.',
@@ -81,7 +69,10 @@ export default function ReviewsAdmin() {
     try {
       const { error } = await supabase
         .from('reviews')
-        .update({ status })
+        .update({ 
+          status,
+          updated_at: new Date().toISOString()
+        })
         .eq('id', id);
 
       if (error) throw error;
@@ -92,15 +83,18 @@ export default function ReviewsAdmin() {
 
       toast({
         title: 'Success',
-        description: `Review ${status} successfully.`,
+        description: `Review marked as ${status} successfully.`,
       });
+      
     } catch (error) {
       console.error('Error updating review status:', error);
       toast({
-        title: 'Error',
+        title: 'Update Failed',
         description: 'Failed to update review status. Please try again.',
         variant: 'destructive',
       });
+      
+      fetchReviews();
     }
   };
 
@@ -143,7 +137,6 @@ export default function ReviewsAdmin() {
       if (error) throw error;
       
       setReviews(reviews.filter(review => review.id !== id));
-      setSelectedReviews(selectedReviews.filter(reviewId => reviewId !== id));
       
       toast({
         title: 'Success',
@@ -159,192 +152,120 @@ export default function ReviewsAdmin() {
     }
   };
 
-  const filteredReviews = reviews.filter(review => {
+  const filteredReviews = reviews.filter((review) => {
     const matchesSearch = 
       review.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
       review.content.toLowerCase().includes(searchTerm.toLowerCase()) ||
       review.author_name.toLowerCase().includes(searchTerm.toLowerCase());
     
-    const matchesStatus = statusFilter === 'all' || review.status === statusFilter;
+    const matchesStatus = filters.status === 'all' || review.status === filters.status;
     
     return matchesSearch && matchesStatus;
   });
 
-  const getStatusBadgeVariant = (status: Review['status']) => {
-    switch (status) {
-      case 'approved':
-        return 'default';
-      case 'pending':
-        return 'outline';
-      case 'rejected':
-        return 'destructive';
-      default:
-        return 'secondary';
-    }
-  };
-
-  if (isLoading) {
-    return (
-      <div className="flex items-center justify-center h-64">
-        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary"></div>
-      </div>
-    );
-  }
-
-  const refreshData = async () => {
-    setIsLoading(true);
-    try {
-      const { data, error } = await supabase
-        .from('reviews')
-        .select('*')
-        .order('created_at', { ascending: false });
-
-      if (error) throw error;
-      setReviews(data || []);
-    } catch (error) {
-      console.error('Error fetching reviews:', error);
-      toast({
-        title: 'Error',
-        description: 'Failed to load reviews. Please try again.',
-        variant: 'destructive',
-      });
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    refreshData();
-  }, []);
+  const columns = [
+    {
+      id: 'title',
+      header: 'Title',
+      cell: (review: Review) => (
+        <div className="font-medium">{review.title}</div>
+      ),
+      filterable: true,
+    },
+    {
+      id: 'author',
+      header: 'Author',
+      cell: (review: Review) => review.author_name,
+    },
+    {
+      id: 'rating',
+      header: 'Rating',
+      cell: (review: Review) => (
+        <div className="flex items-center">
+          <Star className="h-4 w-4 text-yellow-500 fill-yellow-500 mr-1" />
+          {review.rating}
+        </div>
+      ),
+    },
+    {
+      id: 'status',
+      header: 'Status',
+      cell: (review: Review) => (
+        <Badge 
+          variant={
+            review.status === 'approved' ? 'default' :
+            review.status === 'pending' ? 'outline' : 'destructive'
+          }
+          className="capitalize"
+        >
+          {review.status}
+        </Badge>
+      ),
+      filterable: true,
+      filterType: 'select' as const,
+      filterOptions: [
+        { value: 'all', label: 'All Statuses' },
+        { value: 'pending', label: 'Pending' },
+        { value: 'approved', label: 'Approved' },
+        { value: 'rejected', label: 'Rejected' },
+      ],
+    },
+    {
+      id: 'actions',
+      header: 'Actions',
+      cell: (review: Review) => (
+        <div className="flex space-x-2">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => router.push(`/admin/reviews/${review.id}/edit`)}
+          >
+            <Edit className="h-4 w-4" />
+            <span className="sr-only">Edit</span>
+          </Button>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => handleStatusChange(review.id, 'approved')}
+            disabled={review.status === 'approved'}
+          >
+            <Check className="h-4 w-4 text-green-500" />
+            <span className="sr-only">Approve</span>
+          </Button>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => handleStatusChange(review.id, 'rejected')}
+            disabled={review.status === 'rejected'}
+          >
+            <X className="h-4 w-4 text-red-500" />
+            <span className="sr-only">Reject</span>
+          </Button>
+        </div>
+      ),
+    },
+  ];
 
   return (
-    <div className="container mx-auto px-4 py-8">
-      <div className="flex justify-between items-center mb-8">
-        <div>
-          <h1 className="text-3xl font-bold">Reviews</h1>
-          <p className="text-muted-foreground">Manage customer and user reviews</p>
-        </div>
-        <Button onClick={() => router.push('/admin/reviews/new')}>
-          <Plus className="mr-2 h-4 w-4" /> New Review
-        </Button>
-      </div>
-
-      <div className="mb-6">
-        <BulkActions
-          selectedReviews={selectedReviews}
-          reviews={reviews}
-          onSelectionChange={setSelectedReviews}
-          onUpdate={refreshData}
-        />
-      </div>
-
-      <div className="flex flex-col md:flex-row gap-4 mb-6">
-        <div className="relative flex-1">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-          <Input
-            type="text"
-            placeholder="Search reviews..."
-            className="pl-10 w-full"
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-          />
-        </div>
-        
-        <div className="w-full md:w-auto">
-          <select
-            className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-            value={statusFilter}
-            onChange={(e) => setStatusFilter(e.target.value as any)}
-          >
-            <option value="all">All Statuses</option>
-            <option value="pending">Pending</option>
-            <option value="approved">Approved</option>
-            <option value="rejected">Rejected</option>
-          </select>
-        </div>
-      </div>
-
-      <div className="rounded-md border">
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead className="w-12">
-                <Checkbox
-                  id="select-all"
-                  checked={selectedReviews.length === reviews.length && reviews.length > 0}
-                  onCheckedChange={() => {
-                    if (selectedReviews.length === reviews.length) {
-                      setSelectedReviews([]);
-                    } else {
-                      setSelectedReviews(reviews.map(r => r.id));
-                    }
-                  }}
-                  className="h-4 w-4"
-                />
-              </TableHead>
-              <TableHead>Title</TableHead>
-              <TableHead>Rating</TableHead>
-              <TableHead>Author</TableHead>
-              <TableHead>Status</TableHead>
-              <TableHead>Date</TableHead>
-              <TableHead className="text-right">Actions</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {filteredReviews.length > 0 ? (
-              filteredReviews.map((review) => (
-                <TableRow key={review.id} className={selectedReviews.includes(review.id) ? 'bg-muted/50' : ''}>
-                  <TableCell className="w-12">
-                    <Checkbox
-                      id={`select-${review.id}`}
-                      checked={selectedReviews.includes(review.id)}
-                      onCheckedChange={() => toggleReviewSelection(review.id)}
-                      className="h-4 w-4"
-                      onClick={(e) => e.stopPropagation()}
-                    />
-                  </TableCell>
-                  <TableCell className="font-medium">
-                    <div className="space-y-1">
-                      <p className="font-medium">
-                        <button
-                          onClick={() => router.push(`/admin/reviews/${review.id}`)}
-                          className="text-left hover:underline"
-                        >
-                          {review.title}
-                        </button>
-                      </p>
-                      <p className="text-sm text-muted-foreground line-clamp-2">
-                        {review.content}
-                      </p>
-                    </div>
-                  </TableCell>
-                  <TableCell>
-                    <div className="flex items-center">
-                      {[...Array(5)].map((_, i) => (
-                        <Star
-                          key={i}
-                          className={`h-4 w-4 ${
-                            i < review.rating
-                              ? 'fill-yellow-400 text-yellow-400'
-                              : 'text-muted-foreground/30'
-                          }`}
-                        />
-                      ))}
-                    </div>
-                  </TableCell>
-                  <TableCell>
-                    <div className="flex items-center space-x-2">
-                      {review.author_avatar_url && (
-                        <img
-                          src={review.author_avatar_url}
-                          alt={review.author_name}
-                          className="h-8 w-8 rounded-full"
-                        />
-                      )}
-                      <div>
-                        <p className="font-medium">{review.author_name}</p>
-                        {(review.author_title || review.author_company) && (
-                          <p className="text-xs text-muted-foreground">
+    <AdminPage 
+      title="Reviews"
+      isLoading={isLoading}
+      error={error}
+    >
+      <DataTable
+        columns={columns}
+        data={filteredReviews}
+        isLoading={isLoading}
+        searchTerm={searchTerm}
+        onSearch={setSearchTerm}
+        onAddNew={() => router.push('/admin/reviews/new')}
+        addNewLabel="Add Review"
+        filters={filters}
+        onFilterChange={(key, value) => 
+          setFilters(prev => ({ ...prev, [key]: value }))
+        }
+        emptyMessage="No reviews found. Create your first review."
+      />
                             {[review.author_title, review.author_company].filter(Boolean).join(' at ')}
                           </p>
                         )}
@@ -432,6 +353,6 @@ export default function ReviewsAdmin() {
           </TableBody>
         </Table>
       </div>
-    </div>
+    </AdminPage>
   );
 }
