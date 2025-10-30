@@ -2,7 +2,8 @@ import { createBrowserClient } from '@supabase/ssr'
 import { createClient as createSupabaseClient } from '@supabase/supabase-js'
 import type { Database } from '../types/supabase'
 
-// Client-side Supabase client for browser usage
+// Re-export types
+export type { Database } from '../types/supabase'
 
 // Client-side Supabase client for browser usage
 export function createClient() {
@@ -23,6 +24,9 @@ export function createClient() {
     }
   })
 }
+
+// For backward compatibility
+export const supabase = createClient()
 
 // Server-side Supabase client
 export function createServerClient() {

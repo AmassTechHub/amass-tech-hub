@@ -14,8 +14,6 @@ interface CookieOptions {
   httpOnly?: boolean
   sameSite?: 'lax' | 'strict' | 'none' | boolean
 }
-  sameSite?: 'lax' | 'strict' | 'none'
-}
 
 // Regular server component client
 export function createServerClient() {
@@ -42,36 +40,34 @@ export function createServerClient() {
         sameSite: 'lax',
         secure: process.env.NODE_ENV === 'production'
       })
-      return Promise.resolve()
     },
     remove(name: string, options: Partial<Omit<CookieOptions, 'name' | 'value'>> = {}) {
       cookieStore.set({ 
         name, 
         value: '', 
-        ...options, 
-        maxAge: 0,
+        ...options,
         path: '/',
         sameSite: 'lax',
-        secure: process.env.NODE_ENV === 'production'
+        secure: process.env.NODE_ENV === 'production',
+        maxAge: 0
       })
-      return Promise.resolve()
-    },
-  }
-  
-  return createSupabaseServerClient<Database>(
-    supabaseUrl,
-    supabaseAnonKey,
-    {
-      cookies: cookieOptions,
-      cookieOptions: {
-        name: 'sb-auth-token',
-        lifetime: 60 * 60 * 24 * 7, // 7 days
-        domain: '',
-        path: '/',
-        sameSite: 'lax'
-      }
     }
-  )
+  }
+
+  return createSupabaseServerClient<Database>(supabaseUrl, supabaseAnonKey, {
+    cookies: {
+      get: (name: string) => cookieOptions.get(name),
+      set: (name: string, value: string, options: any) => 
+        cookieOptions.set(name, value, options),
+      remove: (name: string, options: any) => 
+        cookieOptions.remove(name, options)
+    },
+    auth: {
+      persistSession: false,
+      autoRefreshToken: false,
+      detectSessionInUrl: false
+    }
+  })
 }
 
 // Admin client for server-side operations
@@ -85,46 +81,44 @@ export function createAdminClient() {
     )
   }
 
-  return createServerClientHelper<Database>(
-    supabaseUrl,
-    supabaseServiceKey,
-    {
-      cookies: {
-        get(name: string) {
-          return cookieStore.get(name)?.value
-        },
-        set(name: string, value: string, options: any) {
-          try {
-            cookieStore.set({ name, value, ...options })
-          } catch (error) {
-            console.error('Error setting cookie:', error)
-          }
-        },
-        remove(name: string, options: any) {
-          try {
-            cookieStore.set({ name, value: '', ...options, maxAge: 0 })
-          } catch (error) {
-            console.error('Error removing cookie:', error)
-          }
-        },
-      },
-      auth: {
-        autoRefreshToken: false,
-        persistSession: false
-      },
-      global: {
-        headers: {
-          'x-supabase-admin': 'true'
-        }
+  const cookieOptions = {
+    get: (name: string) => '',
+    set: (name: string, value: string, options: any) => {},
+    remove: (name: string, options: any) => {}
+  }
+
+  return createSupabaseServerClient<Database>(supabaseUrl, supabaseServiceKey, {
+    cookies: {
+      get: (name: string) => cookieOptions.get(name),
+      set: (name: string, value: string, options: any) => 
+        cookieOptions.set(name, value, options),
+      remove: (name: string, options: any) => 
+        cookieOptions.remove(name, options)
+    },
+    auth: {
+      persistSession: false,
+      autoRefreshToken: false,
+      detectSessionInUrl: false,
+      flowType: 'pkce',
+    },
+    global: {
+      headers: {
+        'x-supabase-admin': 'true'
       }
     }
-  )
+  })
 }
 
 // Helper function to get the current user's session
 export async function getCurrentUser() {
   const supabase = createServerClient()
-  const { data: { session } } = await supabase.auth.getSession()
+  const { data: { session }, error } = await supabase.auth.getSession()
+  
+  if (error) {
+    console.error('Error getting session:', error)
+    return null
+  }
+  
   return session?.user ?? null
 }
 
@@ -133,11 +127,16 @@ export async function isUserAdmin() {
   const user = await getCurrentUser()
   if (!user) return false
   
-  const { data } = await createServerClient()
+  const { data, error } = await createServerClient()
     .from('users')
     .select('role')
     .eq('id', user.id)
-    .single()
+    .single<{ role: string }>()
     
+  if (error) {
+    console.error('Error checking admin status:', error)
+    return false
+  }
+  
   return data?.role === 'admin'
 }
