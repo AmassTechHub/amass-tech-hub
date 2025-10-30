@@ -11,7 +11,6 @@ import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
 import { Button } from '@/components/ui/button'
 import Link from 'next/link'
 
-// ✅ Supabase table type definition
 type CustomCode = {
   id: string
   author_id?: string
@@ -39,12 +38,11 @@ export default function EditCustomCodePage({ params }: { params: { id: string } 
   const router = useRouter()
   const supabase = createClient()
 
-  /* ---------------------------- Fetch existing snippet --------------------------- */
   useEffect(() => {
     const fetchSnippet = async () => {
       try {
         const { data, error } = await supabase
-          .from('custom_code') // ✅ removed generics
+          .from<CustomCode>('custom_code') // ✅ correct typing
           .select('*')
           .eq('id', params.id)
           .single()
@@ -65,14 +63,13 @@ export default function EditCustomCodePage({ params }: { params: { id: string } 
     else setIsLoading(false)
   }, [params.id, supabase])
 
-  /* ----------------------------- Handle save updates ----------------------------- */
   const handleSave = async (data: Omit<CodeSnippet, 'id' | 'created_at' | 'updated_at'>) => {
     if (!snippet) return
 
     setIsSaving(true)
     try {
       const { error } = await supabase
-        .from('custom_code') // ✅ removed generics
+        .from<CustomCode>('custom_code') // ✅ correct typing
         .update({
           ...data,
           updated_at: new Date().toISOString(),
@@ -92,7 +89,6 @@ export default function EditCustomCodePage({ params }: { params: { id: string } 
     }
   }
 
-  /* ----------------------------- Loading and errors ------------------------------ */
   if (isLoading) {
     return (
       <div className="flex items-center justify-center h-64">
@@ -121,7 +117,6 @@ export default function EditCustomCodePage({ params }: { params: { id: string } 
     )
   }
 
-  /* ------------------------------ Render editor UI ------------------------------ */
   return (
     <div className="max-w-6xl mx-auto p-6 space-y-6">
       <div className="flex items-center justify-between">
