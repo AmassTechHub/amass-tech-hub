@@ -16,13 +16,13 @@ import {
   Calendar,
   Briefcase,
   BookOpen,
-  Tool,
+  Wrench as ToolIcon,
   Star,
   FileCheck,
   Bookmark,
   FileCode,
   BookText,
-  FileQuestion
+  HelpCircle as FileQuestion
 } from "lucide-react"
 import { useState } from "react"
 import { signOut, useSession } from "next-auth/react"
@@ -42,7 +42,7 @@ export default function AdminSidebar() {
     { icon: Calendar, label: "Events", href: "/admin/events" },
     { icon: Briefcase, label: "Jobs", href: "/admin/jobs" },
     { icon: Star, label: "Reviews", href: "/admin/reviews" },
-    { icon: Tool, label: "Tools & Resources", href: "/admin/tools" },
+    { icon: ToolIcon, label: "Tools & Resources", href: "/admin/tools" },
     { icon: BookOpen, label: "Tutorials", href: "/admin/tutorials" },
     { icon: FileCheck, label: "Services", href: "/admin/services" },
     { icon: BookText, label: "Knowledge Base", href: "/admin/knowledge-base" },
