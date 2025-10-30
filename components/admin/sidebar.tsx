@@ -13,6 +13,16 @@ import {
   Image as MediaIcon,
   MessageSquare,
   Folder,
+  Calendar,
+  Briefcase,
+  BookOpen,
+  Tool,
+  Star,
+  FileCheck,
+  Bookmark,
+  FileCode,
+  BookText,
+  FileQuestion
 } from "lucide-react"
 import { useState } from "react"
 import { signOut, useSession } from "next-auth/react"
@@ -28,11 +38,20 @@ export default function AdminSidebar() {
 
   const menuItems = [
     { icon: LayoutDashboard, label: "Dashboard", href: "/admin" },
-    { icon: FileText, label: "Posts", href: "/admin/posts" },
-    { icon: Users, label: "Subscribers", href: "/admin/subscribers" },
-    { icon: Folder, label: "Categories", href: "/admin/categories" },
+    { icon: FileText, label: "Blog Posts", href: "/admin/posts" },
+    { icon: Calendar, label: "Events", href: "/admin/events" },
+    { icon: Briefcase, label: "Jobs", href: "/admin/jobs" },
+    { icon: Star, label: "Reviews", href: "/admin/reviews" },
+    { icon: Tool, label: "Tools & Resources", href: "/admin/tools" },
+    { icon: BookOpen, label: "Tutorials", href: "/admin/tutorials" },
+    { icon: FileCheck, label: "Services", href: "/admin/services" },
+    { icon: BookText, label: "Knowledge Base", href: "/admin/knowledge-base" },
+    { icon: FileQuestion, label: "FAQs", href: "/admin/faqs" },
+    { icon: Users, label: "Users", href: "/admin/users" },
     { icon: MessageSquare, label: "Comments", href: "/admin/comments" },
-    { icon: MediaIcon, label: "Media", href: "/admin/media" },
+    { icon: Bookmark, label: "Categories", href: "/admin/categories" },
+    { icon: FileCode, label: "Custom Code", href: "/admin/custom-code" },
+    { icon: MediaIcon, label: "Media Library", href: "/admin/media" },
     { icon: BarChart3, label: "Analytics", href: "/admin/analytics" },
     { icon: Settings, label: "Settings", href: "/admin/settings" },
   ]
