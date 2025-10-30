@@ -4,9 +4,9 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "build": "next build --no-lint",
+    "build": "next build",
     "start": "next start",
-    "postinstall": "next build --no-lint",
+    "postinstall": "next build",
     "lint": "next lint",
     "format": "prettier --write .",
     "check-types": "tsc --noEmit",
