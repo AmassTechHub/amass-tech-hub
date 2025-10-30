@@ -11,6 +11,7 @@ import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
 import { Button } from '@/components/ui/button'
 import Link from 'next/link'
 
+/* ------------------------- Supabase Table Definition ------------------------- */
 type CustomCode = {
   id: string
   author_id?: string
@@ -43,7 +44,7 @@ export default function EditCustomCodePage({ params }: { params: { id: string } 
     const fetchSnippet = async () => {
       try {
         const { data, error } = await supabase
-          .from('custom_code') // ✅ removed generics
+          .from<CustomCode, CustomCode>('custom_code') // ✅ proper 2 generics
           .select('*')
           .eq('id', params.id)
           .single()
@@ -71,11 +72,11 @@ export default function EditCustomCodePage({ params }: { params: { id: string } 
     setIsSaving(true)
     try {
       const { error } = await supabase
-        .from('custom_code') // ✅ removed generics
+        .from<CustomCode, CustomCode>('custom_code') // ✅ same 2 generics here
         .update({
           ...data,
           updated_at: new Date().toISOString(),
-        } as CustomCode) // ✅ cast type to fix the "never" error
+        })
         .eq('id', snippet.id)
 
       if (error) throw error
