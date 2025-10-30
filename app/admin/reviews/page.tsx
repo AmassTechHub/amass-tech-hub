@@ -18,7 +18,6 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { supabase } from '@/lib/supabase';
 import { BulkActions } from '@/components/admin/reviews/bulk-actions';
 import { toast } from '@/components/ui/use-toast';
-import { toast } from '@/components/ui/use-toast';
 
 type Review = {
   id: string;

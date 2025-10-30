@@ -492,9 +492,7 @@ export default function ModerationQueue() {
                               </TooltipTrigger>
                               <TooltipContent>Approve</TooltipContent>
                             </Tooltip>
-                          </Tooltip>
-                          
-                          <TooltipProvider>
+                            
                             <Tooltip>
                               <TooltipTrigger asChild>
                                 <Button 
@@ -509,7 +507,7 @@ export default function ModerationQueue() {
                               </TooltipTrigger>
                               <TooltipContent>Reject</TooltipContent>
                             </Tooltip>
-                          </Tooltip>
+                          </TooltipProvider>
                         </div>
                       </div>
                     </div>
