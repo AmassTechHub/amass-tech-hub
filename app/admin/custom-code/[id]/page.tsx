@@ -11,7 +11,6 @@ import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
 import { Button } from '@/components/ui/button'
 import Link from 'next/link'
 
-/* ------------------------- Supabase Table Definition ------------------------- */
 type CustomCode = {
   id: string
   author_id?: string
@@ -44,7 +43,7 @@ export default function EditCustomCodePage({ params }: { params: { id: string } 
     const fetchSnippet = async () => {
       try {
         const { data, error } = await supabase
-          .from<CustomCode, CustomCode>('custom_code') // ✅ proper 2 generics
+          .from('custom_code') // ✅ no generics here
           .select('*')
           .eq('id', params.id)
           .single()
@@ -72,7 +71,7 @@ export default function EditCustomCodePage({ params }: { params: { id: string } 
     setIsSaving(true)
     try {
       const { error } = await supabase
-        .from<CustomCode, CustomCode>('custom_code') // ✅ same 2 generics here
+        .from('custom_code') // ✅ no generics
         .update({
           ...data,
           updated_at: new Date().toISOString(),
