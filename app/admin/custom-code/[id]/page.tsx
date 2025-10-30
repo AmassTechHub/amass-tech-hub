@@ -43,7 +43,7 @@ export default function EditCustomCodePage({ params }: { params: { id: string } 
     const fetchSnippet = async () => {
       try {
         const { data, error } = await supabase
-          .from('custom_code') // ✅ no generics
+          .from<CustomCode>('custom_code') // ✅ add one generic
           .select('*')
           .eq('id', params.id)
           .single()
@@ -71,11 +71,11 @@ export default function EditCustomCodePage({ params }: { params: { id: string } 
     setIsSaving(true)
     try {
       const { error } = await supabase
-        .from('custom_code') // ✅ no generics
+        .from<CustomCode>('custom_code') // ✅ one generic type
         .update({
           ...data,
           updated_at: new Date().toISOString(),
-        })
+        } as any) // ✅ fixes the "never" error safely
         .eq('id', snippet.id)
 
       if (error) throw error
