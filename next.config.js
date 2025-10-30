@@ -1,15 +1,26 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   reactStrictMode: true,
-  swcMinify: true,
   images: {
-    domains: [
-      'localhost',
-      'your-supabase-url.supabase.co',
-      'your-vercel-app.vercel.app',
-      'amass-tech-hub.vercel.app'
+    remotePatterns: [
+      {
+        protocol: 'http',
+        hostname: 'localhost',
+      },
+      {
+        protocol: 'https',
+        hostname: '**.supabase.co',
+      },
+      {
+        protocol: 'https',
+        hostname: 'amass-tech-hub.vercel.app',
+      }
     ],
     formats: ['image/avif', 'image/webp'],
+  },
+  // Enable Turbopack
+  experimental: {
+    turbo: {}
   },
   // Add security headers
   async headers() {
@@ -37,6 +48,20 @@ const nextConfig = {
   env: {
     NEXT_PUBLIC_SUPABASE_URL: process.env.NEXT_PUBLIC_SUPABASE_URL,
     NEXT_PUBLIC_SUPABASE_ANON_KEY: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
+  },
+  // Disable React's legacy context API
+  reactStrictMode: true,
+  // Disable webpack optimizations in favor of Turbopack
+  webpack: (config, { isServer }) => {
+    if (!isServer) {
+      config.resolve.fallback = {
+        ...config.resolve.fallback,
+        fs: false,
+        net: false,
+        tls: false,
+      };
+    }
+    return config;
   },
   // Enable static exports for full static site generation
   output: 'standalone',
