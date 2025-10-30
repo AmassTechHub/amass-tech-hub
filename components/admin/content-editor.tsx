@@ -1,13 +1,13 @@
 'use client'
 
-import { useState } from 'react';
-import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import * as z from 'zod';
-import { toast } from 'sonner';
-import { Loader2 } from 'lucide-react';
+import { useState, useEffect } from 'react'
+import { useForm } from 'react-hook-form'
+import { zodResolver } from '@hookform/resolvers/zod'
+import * as z from 'zod'
+import { toast } from 'sonner'
+import { Loader2 } from 'lucide-react'
 
-import { Button } from '@/components/ui/button';
+import { Button } from '@/components/ui/button'
 import {
   Form,
   FormControl,
@@ -16,17 +16,19 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-} from '@/components/ui/form';
-import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
+} from '@/components/ui/form'
+import { Input } from '@/components/ui/input'
+import { Textarea } from '@/components/ui/textarea'
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select';
-import { Switch } from '@/components/ui/switch';
+} from '@/components/ui/select'
+import { Switch } from '@/components/ui/switch'
+
+/* ------------------------- Content Schema and Types ------------------------ */
 
 const contentTypes = [
   { value: 'news', label: 'News' },
@@ -35,7 +37,7 @@ const contentTypes = [
   { value: 'service', label: 'Service' },
   { value: 'podcast', label: 'Podcast' },
   { value: 'event', label: 'Event' },
-];
+]
 
 const formSchema = z.object({
   type: z.string().min(1, 'Type is required'),
@@ -46,39 +48,64 @@ const formSchema = z.object({
   status: z.enum(['draft', 'published', 'archived']).default('draft'),
   isFeatured: z.boolean().default(false),
   metadata: z.any().optional(),
-});
+})
 
-type ContentFormValues = z.infer<typeof formSchema>;
+type ContentFormValues = z.infer<typeof formSchema>
 
-export function ContentEditor() {
-  const [isLoading, setIsLoading] = useState(false);
+interface Content {
+  id?: string
+  type: string
+  title: string
+  description?: string
+  content: string
+  featuredImage?: string
+  status: 'draft' | 'published' | 'archived'
+  isFeatured: boolean
+  metadata?: Record<string, any>
+}
+
+interface ContentEditorProps {
+  content?: Content | null
+  onSave?: () => void
+  onCancel?: () => void
+}
+
+/* ------------------------- Component Implementation ------------------------ */
+
+export function ContentEditor({ content, onSave, onCancel }: ContentEditorProps) {
+  const [isLoading, setIsLoading] = useState(false)
 
   const form = useForm<ContentFormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      type: 'news',
-      status: 'draft',
-      isFeatured: false,
-      metadata: {},
+      type: content?.type || 'news',
+      title: content?.title || '',
+      description: content?.description || '',
+      content: content?.content || '',
+      featuredImage: content?.featuredImage || '',
+      status: content?.status || 'draft',
+      isFeatured: content?.isFeatured || false,
+      metadata: content?.metadata || {},
     },
-  });
+  })
 
-  const selectedType = form.watch('type');
+  const selectedType = form.watch('type')
 
+  /* ------------------------------- Form Submit ------------------------------ */
   const onSubmit = async (data: ContentFormValues) => {
     try {
-      setIsLoading(true);
-      
-      const response = await fetch('/api/content', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+      setIsLoading(true)
+
+      const method = content?.id ? 'PUT' : 'POST'
+      const url = content?.id ? `/api/content/${content.id}` : '/api/content'
+
+      const response = await fetch(url, {
+        method,
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           type: data.type,
           data: {
             ...data,
-            // Add type-specific fields
             ...(data.type === 'event' && {
               startDate: data.metadata?.startDate,
               endDate: data.metadata?.endDate,
@@ -90,27 +117,30 @@ export function ContentEditor() {
             }),
           },
         }),
-      });
+      })
 
-      if (!response.ok) {
-        throw new Error('Failed to save content');
-      }
+      if (!response.ok) throw new Error('Failed to save content')
 
-      const result = await response.json();
-      toast.success('Content saved successfully!');
-      form.reset();
+      const result = await response.json()
+      toast.success(content?.id ? 'Content updated successfully!' : 'Content created successfully!')
+
+      if (onSave) onSave()
+      form.reset()
     } catch (error) {
-      console.error('Error saving content:', error);
-      toast.error('Failed to save content');
+      console.error('Error saving content:', error)
+      toast.error('Failed to save content')
     } finally {
-      setIsLoading(false);
+      setIsLoading(false)
     }
-  };
+  }
+
+  /* ------------------------------- UI Layout ------------------------------- */
 
   return (
     <div className="space-y-6">
       <Form {...form}>
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+          {/* Type + Status */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <FormField
               control={form.control}
@@ -118,11 +148,7 @@ export function ContentEditor() {
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Content Type</FormLabel>
-                  <Select
-                    onValueChange={field.onChange}
-                    defaultValue={field.value}
-                    disabled={isLoading}
-                  >
+                  <Select onValueChange={field.onChange} defaultValue={field.value} disabled={isLoading}>
                     <FormControl>
                       <SelectTrigger>
                         <SelectValue placeholder="Select a content type" />
@@ -147,11 +173,7 @@ export function ContentEditor() {
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Status</FormLabel>
-                  <Select
-                    onValueChange={field.onChange}
-                    defaultValue={field.value}
-                    disabled={isLoading}
-                  >
+                  <Select onValueChange={field.onChange} defaultValue={field.value} disabled={isLoading}>
                     <FormControl>
                       <SelectTrigger>
                         <SelectValue placeholder="Select status" />
@@ -169,6 +191,7 @@ export function ContentEditor() {
             />
           </div>
 
+          {/* Title */}
           <FormField
             control={form.control}
             name="title"
@@ -176,17 +199,14 @@ export function ContentEditor() {
               <FormItem>
                 <FormLabel>Title</FormLabel>
                 <FormControl>
-                  <Input
-                    placeholder="Enter title"
-                    {...field}
-                    disabled={isLoading}
-                  />
+                  <Input placeholder="Enter title" {...field} disabled={isLoading} />
                 </FormControl>
                 <FormMessage />
               </FormItem>
             )}
           />
 
+          {/* Description */}
           <FormField
             control={form.control}
             name="description"
@@ -194,18 +214,14 @@ export function ContentEditor() {
               <FormItem>
                 <FormLabel>Description</FormLabel>
                 <FormControl>
-                  <Textarea
-                    placeholder="Enter a brief description"
-                    className="min-h-[100px]"
-                    {...field}
-                    disabled={isLoading}
-                  />
+                  <Textarea placeholder="Enter a brief description" className="min-h-[100px]" {...field} disabled={isLoading} />
                 </FormControl>
                 <FormMessage />
               </FormItem>
             )}
           />
 
+          {/* Content */}
           <FormField
             control={form.control}
             name="content"
@@ -213,18 +229,14 @@ export function ContentEditor() {
               <FormItem>
                 <FormLabel>Content</FormLabel>
                 <FormControl>
-                  <Textarea
-                    placeholder="Write your content here..."
-                    className="min-h-[200px]"
-                    {...field}
-                    disabled={isLoading}
-                  />
+                  <Textarea placeholder="Write your content here..." className="min-h-[200px]" {...field} disabled={isLoading} />
                 </FormControl>
                 <FormMessage />
               </FormItem>
             )}
           />
 
+          {/* Featured Image */}
           <FormField
             control={form.control}
             name="featuredImage"
@@ -232,17 +244,14 @@ export function ContentEditor() {
               <FormItem>
                 <FormLabel>Featured Image URL</FormLabel>
                 <FormControl>
-                  <Input
-                    placeholder="https://example.com/image.jpg"
-                    {...field}
-                    disabled={isLoading}
-                  />
+                  <Input placeholder="https://example.com/image.jpg" {...field} disabled={isLoading} />
                 </FormControl>
                 <FormMessage />
               </FormItem>
             )}
           />
 
+          {/* Event Metadata */}
           {selectedType === 'event' && (
             <div className="space-y-4 p-4 border rounded-lg">
               <h3 className="font-medium">Event Details</h3>
@@ -254,11 +263,7 @@ export function ContentEditor() {
                     <FormItem>
                       <FormLabel>Start Date</FormLabel>
                       <FormControl>
-                        <Input
-                          type="datetime-local"
-                          {...field}
-                          disabled={isLoading}
-                        />
+                        <Input type="datetime-local" {...field} disabled={isLoading} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -271,11 +276,7 @@ export function ContentEditor() {
                     <FormItem>
                       <FormLabel>End Date</FormLabel>
                       <FormControl>
-                        <Input
-                          type="datetime-local"
-                          {...field}
-                          disabled={isLoading}
-                        />
+                        <Input type="datetime-local" {...field} disabled={isLoading} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -288,11 +289,7 @@ export function ContentEditor() {
                     <FormItem className="md:col-span-2">
                       <FormLabel>Location</FormLabel>
                       <FormControl>
-                        <Input
-                          placeholder="Event location"
-                          {...field}
-                          disabled={isLoading}
-                        />
+                        <Input placeholder="Event location" {...field} disabled={isLoading} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -302,6 +299,7 @@ export function ContentEditor() {
             </div>
           )}
 
+          {/* Podcast Metadata */}
           {selectedType === 'podcast' && (
             <div className="space-y-4 p-4 border rounded-lg">
               <h3 className="font-medium">Podcast Details</h3>
@@ -312,11 +310,7 @@ export function ContentEditor() {
                   <FormItem>
                     <FormLabel>Audio URL</FormLabel>
                     <FormControl>
-                      <Input
-                        placeholder="https://example.com/audio.mp3"
-                        {...field}
-                        disabled={isLoading}
-                      />
+                      <Input placeholder="https://example.com/audio.mp3" {...field} disabled={isLoading} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -329,12 +323,7 @@ export function ContentEditor() {
                   <FormItem>
                     <FormLabel>Duration (minutes)</FormLabel>
                     <FormControl>
-                      <Input
-                        type="number"
-                        placeholder="60"
-                        {...field}
-                        disabled={isLoading}
-                      />
+                      <Input type="number" placeholder="60" {...field} disabled={isLoading} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -343,6 +332,7 @@ export function ContentEditor() {
             </div>
           )}
 
+          {/* Featured Toggle + Actions */}
           <div className="flex items-center justify-between">
             <FormField
               control={form.control}
@@ -350,29 +340,28 @@ export function ContentEditor() {
               render={({ field }) => (
                 <FormItem className="flex flex-row items-center space-x-3 space-y-0 rounded-md border p-4">
                   <FormControl>
-                    <Switch
-                      checked={field.value}
-                      onCheckedChange={field.onChange}
-                      disabled={isLoading}
-                    />
+                    <Switch checked={field.value} onCheckedChange={field.onChange} disabled={isLoading} />
                   </FormControl>
                   <div className="space-y-1 leading-none">
                     <FormLabel>Featured</FormLabel>
-                    <FormDescription>
-                      Mark this content as featured
-                    </FormDescription>
+                    <FormDescription>Mark this content as featured</FormDescription>
                   </div>
                 </FormItem>
               )}
             />
 
-            <Button type="submit" disabled={isLoading}>
-              {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              Save Content
-            </Button>
+            <div className="flex gap-2">
+              <Button type="button" variant="outline" onClick={() => onCancel?.()} disabled={isLoading}>
+                Cancel
+              </Button>
+              <Button type="submit" disabled={isLoading}>
+                {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                {content?.id ? 'Update Content' : 'Save Content'}
+              </Button>
+            </div>
           </div>
         </form>
       </Form>
     </div>
-  );
+  )
 }
