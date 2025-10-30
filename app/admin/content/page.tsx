@@ -21,7 +21,14 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { Badge } from '@/components/ui/badge'
-import { ContentEditor, type Content } from '@/components/admin/content-editor' // ✅ Import the same type
+import { ContentEditor, type Content as BaseContent } from '@/components/admin/content-editor'
+
+// ✅ Extend the Content type for admin page (adds DB fields)
+type Content = BaseContent & {
+  id: string
+  created_at?: string
+  updated_at?: string
+}
 
 export default function ContentManager() {
   const [content, setContent] = useState<Content[]>([])
@@ -58,8 +65,8 @@ export default function ContentManager() {
       setIsLoading(true)
       const response = await fetch('/api/content')
       if (!response.ok) throw new Error('Failed to fetch content')
+
       const result = await response.json()
-      // ✅ Adjust shape if API returns wrapped data
       const data = Array.isArray(result.data) ? result.data : result
       setContent(data)
     } catch (error) {
@@ -77,9 +84,7 @@ export default function ContentManager() {
   const handleDelete = async (id: string) => {
     if (confirm('Are you sure you want to delete this item?')) {
       try {
-        const response = await fetch(`/api/content?id=${id}`, {
-          method: 'DELETE',
-        })
+        const response = await fetch(`/api/content?id=${id}`, { method: 'DELETE' })
         if (!response.ok) throw new Error('Failed to delete content')
         fetchContent()
       } catch (error) {
@@ -129,11 +134,7 @@ export default function ContentManager() {
   if (showEditor) {
     return (
       <div className="container mx-auto py-8">
-        <Button
-          variant="outline"
-          onClick={() => handleEditorClose(false)}
-          className="mb-6"
-        >
+        <Button variant="outline" onClick={() => handleEditorClose(false)} className="mb-6">
           ← Back to Content
         </Button>
         <h1 className="text-3xl font-bold mb-6">
@@ -150,17 +151,18 @@ export default function ContentManager() {
 
   return (
     <div className="container mx-auto py-8">
+      {/* Header */}
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
         <div>
           <h1 className="text-3xl font-bold">Content Manager</h1>
           <p className="text-muted-foreground">Manage all your website content in one place</p>
         </div>
         <Button onClick={() => setShowEditor(true)}>
-          <Plus className="mr-2 h-4 w-4" />
-          Create New
+          <Plus className="mr-2 h-4 w-4" /> Create New
         </Button>
       </div>
 
+      {/* Filters */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
         <div className="relative">
           <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
@@ -171,6 +173,7 @@ export default function ContentManager() {
             onChange={(e) => setSearchTerm(e.target.value)}
           />
         </div>
+
         <Select value={contentTypeFilter} onValueChange={setContentTypeFilter}>
           <SelectTrigger>
             <SelectValue placeholder="Filter by type" />
@@ -183,6 +186,7 @@ export default function ContentManager() {
             ))}
           </SelectContent>
         </Select>
+
         <Select value={statusFilter} onValueChange={setStatusFilter}>
           <SelectTrigger>
             <SelectValue placeholder="Filter by status" />
@@ -197,6 +201,7 @@ export default function ContentManager() {
         </Select>
       </div>
 
+      {/* Table */}
       <div className="rounded-md border">
         <Table>
           <TableHeader>
@@ -238,7 +243,9 @@ export default function ContentManager() {
                     )}
                   </TableCell>
                   <TableCell className="text-sm text-muted-foreground">
-                    {new Date(item.updated_at).toLocaleDateString()}
+                    {item.updated_at
+                      ? new Date(item.updated_at).toLocaleDateString()
+                      : '—'}
                   </TableCell>
                   <TableCell>
                     <div className="flex justify-end gap-2">
