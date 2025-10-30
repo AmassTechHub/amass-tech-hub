@@ -6,7 +6,7 @@
     "dev": "next dev",
     "build": "cross-env NEXT_DISABLE_TURBOPACK=1 next build",
     "start": "next start",
-    "postinstall": "cross-env NEXT_DISABLE_TURBOPACK=1 next build",
+    "build": "next build",
     "lint": "next lint",
     "format": "prettier --write .",
     "check-types": "tsc --noEmit",
