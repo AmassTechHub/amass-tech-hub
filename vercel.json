@@ -1,6 +1,7 @@
 {
   "version": 2,
   "buildCommand": "npm run build",
+  "installCommand": "npm install",
   "outputDirectory": ".next",
   "framework": "nextjs",
   "rewrites": [
@@ -8,16 +9,17 @@
     { "source": "/admin/(.*)", "destination": "/admin/$1" },
     { "source": "/(.*)", "destination": "/index.html" }
   ],
-  "env": {
-    "NODE_ENV": "production"
-  },
   "build": {
     "env": {
+      "NEXT_DISABLE_TURBOPACK": "1",
       "NEXT_PUBLIC_SUPABASE_URL": "${https://oujhimntlngbkescgplt.supabase.co}",
       "NEXT_PUBLIC_SUPABASE_ANON_KEY": "${eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im91amhpbW50bG5nYmtlc2NncGx0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjE0MzAyMzQsImV4cCI6MjA3NzAwNjIzNH0.rQDwdEbi1bXR85zudNs_74JQ9J0v-GSb-fhQAAURqZU}",
       "NEXTAUTH_SECRET": "${JU7wWuVwgGVAaEq74ku0coCeQ9Xzxa2dZxxxm2aaRsY}",
       "NEXTAUTH_URL": "${https://amasstechhub.com}"
     }
+  },
+  "env": {
+    "NODE_ENV": "production"
   },
   "regions": ["iad1"],
   "cleanUrls": true,
