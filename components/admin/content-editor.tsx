@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import * as z from 'zod'
@@ -52,7 +52,7 @@ const formSchema = z.object({
 
 type ContentFormValues = z.infer<typeof formSchema>
 
-interface Content {
+export interface Content {
   id?: string
   type: string
   title: string
@@ -78,14 +78,14 @@ export function ContentEditor({ content, onSave, onCancel }: ContentEditorProps)
   const form = useForm<ContentFormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      type: content?.type || 'news',
-      title: content?.title || '',
-      description: content?.description || '',
-      content: content?.content || '',
-      featuredImage: content?.featuredImage || '',
-      status: content?.status || 'draft',
-      isFeatured: content?.isFeatured || false,
-      metadata: content?.metadata || {},
+      type: content?.type ?? 'news',
+      title: content?.title ?? '',
+      description: content?.description ?? '',
+      content: content?.content ?? '',
+      featuredImage: content?.featuredImage ?? '',
+      status: content?.status ?? 'draft',
+      isFeatured: content?.isFeatured ?? false,
+      metadata: content?.metadata ?? {},
     },
   })
 
@@ -104,27 +104,24 @@ export function ContentEditor({ content, onSave, onCancel }: ContentEditorProps)
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           type: data.type,
-          data: {
-            ...data,
-            ...(data.type === 'event' && {
-              startDate: data.metadata?.startDate,
-              endDate: data.metadata?.endDate,
-              location: data.metadata?.location,
-            }),
-            ...(data.type === 'podcast' && {
-              audioUrl: data.metadata?.audioUrl,
-              duration: data.metadata?.duration,
-            }),
-          },
+          ...data,
+          ...(data.type === 'event' && {
+            startDate: data.metadata?.startDate,
+            endDate: data.metadata?.endDate,
+            location: data.metadata?.location,
+          }),
+          ...(data.type === 'podcast' && {
+            audioUrl: data.metadata?.audioUrl,
+            duration: data.metadata?.duration,
+          }),
         }),
       })
 
       if (!response.ok) throw new Error('Failed to save content')
 
-      const result = await response.json()
       toast.success(content?.id ? 'Content updated successfully!' : 'Content created successfully!')
 
-      if (onSave) onSave()
+      onSave?.()
       form.reset()
     } catch (error) {
       console.error('Error saving content:', error)
@@ -214,7 +211,12 @@ export function ContentEditor({ content, onSave, onCancel }: ContentEditorProps)
               <FormItem>
                 <FormLabel>Description</FormLabel>
                 <FormControl>
-                  <Textarea placeholder="Enter a brief description" className="min-h-[100px]" {...field} disabled={isLoading} />
+                  <Textarea
+                    placeholder="Enter a brief description"
+                    className="min-h-[100px]"
+                    {...field}
+                    disabled={isLoading}
+                  />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -229,7 +231,12 @@ export function ContentEditor({ content, onSave, onCancel }: ContentEditorProps)
               <FormItem>
                 <FormLabel>Content</FormLabel>
                 <FormControl>
-                  <Textarea placeholder="Write your content here..." className="min-h-[200px]" {...field} disabled={isLoading} />
+                  <Textarea
+                    placeholder="Write your content here..."
+                    className="min-h-[200px]"
+                    {...field}
+                    disabled={isLoading}
+                  />
                 </FormControl>
                 <FormMessage />
               </FormItem>
