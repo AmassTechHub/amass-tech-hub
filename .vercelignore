@@ -1,3 +1,7 @@
+# ========================
+# Vercel Ignore File (.vercelignore)
+# ========================
+
 # Dependency directories
 node_modules/
 .next/
@@ -33,16 +37,20 @@ yend-error.log*
 *.md
 *.mdx
 *.txt
-*.log
 coverage/
 *.min.js
 *.min.css
 *.swp
 *.swo
 *~
+*.tsbuildinfo
 
-# Include Supabase files
-!lib/supabase/**/*
+# Test files
+__tests__/
+*.test.js
+*.test.ts
+*.spec.js
+*.spec.ts
 
 # IDE and editor files
 .idea/
@@ -52,13 +60,6 @@ coverage/
 *.njsproj
 *.sln
 *.sw?
-
-# Test files
-__tests__/
-*.test.js
-*.test.ts
-*.spec.js
-*.spec.ts
 
 # Misc
 .DS_Store
@@ -72,9 +73,6 @@ supabase/
 # Local development
 .vercel
 .vercel_build_output
-
-# TypeScript build output
-*.tsbuildinfo
 
 # Next.js cache
 .cache/
@@ -101,5 +99,13 @@ supabase/
 .env.test.local
 .env.production.local
 
-# Vercel specific
-.vercel_build_output/
+# --- ✅ INCLUDE CRITICAL FILES ---
+# Always include Supabase files and folders
+!lib/supabase/**
+
+# (Optional) include other important lib files if needed
+!lib/**
+
+# ========================
+# END OF FILE
+# ========================
