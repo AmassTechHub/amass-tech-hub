@@ -122,7 +122,7 @@ export default function ContentManager() {
   const getStatusBadge = (status: string) => {
     switch (status) {
       case 'published':
-        return <Badge variant="success">Published</Badge>;
+        return <Badge variant="default">Published</Badge>;
       case 'draft':
         return <Badge variant="outline">Draft</Badge>;
       case 'archived':
