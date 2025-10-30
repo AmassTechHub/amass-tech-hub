@@ -1,6 +1,21 @@
-import { createServerClient as createServerClientHelper } from '@supabase/ssr'
+import { createServerClient as createSupabaseServerClient } from '@supabase/ssr'
 import { cookies } from 'next/headers'
 import type { Database } from '@/types/supabase'
+
+// Type for cookie options
+interface CookieOptions {
+  name: string
+  value: string
+  expires?: Date
+  maxAge?: number
+  domain?: string
+  path?: string
+  secure?: boolean
+  httpOnly?: boolean
+  sameSite?: 'lax' | 'strict' | 'none' | boolean
+}
+  sameSite?: 'lax' | 'strict' | 'none'
+}
 
 // Regular server component client
 export function createServerClient() {
@@ -13,37 +28,54 @@ export function createServerClient() {
       'Missing NEXT_PUBLIC_SUPABASE_URL or NEXT_PUBLIC_SUPABASE_ANON_KEY. Check your environment variables.'
     )
   }
+
+  const cookieOptions = {
+    get(name: string) {
+      return cookieStore.get(name)?.value
+    },
+    set(name: string, value: string, options: Partial<Omit<CookieOptions, 'name' | 'value'>> = {}) {
+      cookieStore.set({ 
+        name, 
+        value, 
+        ...options,
+        path: '/',
+        sameSite: 'lax',
+        secure: process.env.NODE_ENV === 'production'
+      })
+      return Promise.resolve()
+    },
+    remove(name: string, options: Partial<Omit<CookieOptions, 'name' | 'value'>> = {}) {
+      cookieStore.set({ 
+        name, 
+        value: '', 
+        ...options, 
+        maxAge: 0,
+        path: '/',
+        sameSite: 'lax',
+        secure: process.env.NODE_ENV === 'production'
+      })
+      return Promise.resolve()
+    },
+  }
   
-  return createServerClientHelper<Database>(
+  return createSupabaseServerClient<Database>(
     supabaseUrl,
     supabaseAnonKey,
     {
-      cookies: {
-        get(name: string) {
-          return cookieStore.get(name)?.value
-        },
-        set(name: string, value: string, options: any) {
-          try {
-            cookieStore.set({ name, value, ...options })
-          } catch (error) {
-            console.error('Error setting cookie:', error)
-          }
-        },
-        remove(name: string, options: any) {
-          try {
-            cookieStore.set({ name, value: '', ...options, maxAge: 0 })
-          } catch (error) {
-            console.error('Error removing cookie:', error)
-          }
-        },
-      },
+      cookies: cookieOptions,
+      cookieOptions: {
+        name: 'sb-auth-token',
+        lifetime: 60 * 60 * 24 * 7, // 7 days
+        domain: '',
+        path: '/',
+        sameSite: 'lax'
+      }
     }
   )
 }
 
 // Admin client for server-side operations
 export function createAdminClient() {
-  const cookieStore = cookies()
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
   const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY
 

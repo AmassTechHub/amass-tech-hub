@@ -193,39 +193,6 @@ export default function UsersPage() {
     setFilteredUsers(result)
   }, [searchQuery, roleFilter, statusFilter, users])
 
-  const fetchUsers = async () => {
-    try {
-      setLoading(true)
-      const { data: { users }, error } = await supabase.auth.admin.listUsers()
-      
-      if (error) throw error
-      
-      // Transform the user data to match our UserProfile interface
-      const userProfiles = users.map(user => ({
-        id: user.id,
-        email: user.email || '',
-        role: user.user_metadata?.role || 'user',
-        full_name: user.user_metadata?.full_name || null,
-        avatar_url: user.user_metadata?.avatar_url || null,
-        created_at: user.created_at,
-        last_sign_in_at: user.last_sign_in_at,
-        is_active: !user.banned_at,
-        email_confirmed_at: user.email_confirmed_at
-      }))
-      
-      setUsers(userProfiles)
-      setFilteredUsers(userProfiles)
-    } catch (error) {
-      console.error("Error fetching users:", error)
-      toast({
-        title: "Error",
-        description: "Failed to load users. Please try again.",
-        variant: "destructive",
-      })
-    } finally {
-      setLoading(false)
-    }
-  }
 
   const handleRoleChange = async (userId: string, newRole: string) => {
     try {

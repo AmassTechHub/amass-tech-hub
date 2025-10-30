@@ -1,34 +1,10 @@
-import { createBrowserClient, createServerClient as createServerClientHelper } from '@supabase/ssr'
-import { cookies } from 'next/headers'
+import { createBrowserClient } from '@supabase/ssr'
+import { createClient as createSupabaseClient } from '@supabase/supabase-js'
 import type { Database } from '../types/supabase'
 
-// Helper to handle cookies in Next.js 16+
-const createCookieHandler = () => {
-  return {
-    get: (name: string) => {
-      const cookieStore = cookies()
-      return cookieStore.get(name)?.value
-    },
-    set: (name: string, value: string, options: any) => {
-      try {
-        const cookieStore = cookies()
-        cookieStore.set({ name, value, ...options, path: '/' })
-      } catch (error) {
-        console.error('Error setting cookie:', error)
-      }
-    },
-    remove: (name: string, options: any) => {
-      try {
-        const cookieStore = cookies()
-        cookieStore.set({ name, value: '', ...options, maxAge: 0, path: '/' })
-      } catch (error) {
-        console.error('Error removing cookie:', error)
-      }
-    },
-  }
-}
+// Client-side Supabase client for browser usage
 
-// Public client for client components
+// Client-side Supabase client for browser usage
 export function createClient() {
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
   const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
@@ -48,23 +24,26 @@ export function createClient() {
   })
 }
 
-// Server component client
+// Server-side Supabase client
 export function createServerClient() {
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
   const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
 
   if (!supabaseUrl || !supabaseAnonKey) {
-    throw new Error(
-      'Missing NEXT_PUBLIC_SUPABASE_URL or NEXT_PUBLIC_SUPABASE_ANON_KEY. Check your environment variables.'
-    )
+    throw new Error('Missing Supabase URL or Anon Key')
   }
 
-  const cookieHandler = createCookieHandler()
-
-  return createServerClientHelper<Database>(supabaseUrl, supabaseAnonKey, {
-    cookies: cookieHandler
+  return createSupabaseClient<Database>(supabaseUrl, supabaseAnonKey, {
+    auth: {
+      persistSession: false,
+      autoRefreshToken: false,
+      detectSessionInUrl: false
+    }
   })
 }
+
+// Alias for backward compatibility
+export const supabaseAdmin = createServerClient
 
 // Admin client for server-side operations
 export function createAdminClient() {
@@ -77,13 +56,12 @@ export function createAdminClient() {
     )
   }
 
-  const cookieHandler = createCookieHandler()
-
-  return createServerClientHelper<Database>(supabaseUrl, supabaseServiceKey, {
-    cookies: cookieHandler,
+  return createSupabaseClient<Database>(supabaseUrl, supabaseServiceKey, {
     auth: {
+      persistSession: false,
       autoRefreshToken: false,
-      persistSession: false
+      detectSessionInUrl: false,
+      flowType: 'pkce',
     },
     global: {
       headers: {
