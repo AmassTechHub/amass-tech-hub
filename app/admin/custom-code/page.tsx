@@ -15,16 +15,13 @@ import {
   Terminal,
   Pencil,
   Copy,
-  Trash2,
-  Play,
-  ArrowLeft
+  Trash2
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { ColumnDef } from '@tanstack/react-table';
-import { AdminPage } from '@/components/admin/AdminPage';
 import { AdminDataTable } from '@/components/admin/AdminDataTable';
 import { format } from 'date-fns';
 import { toast } from 'sonner';
@@ -64,187 +61,22 @@ const locationLabels: Record<CodeSnippetLocation, { label: string; icon: any }> 
   body_end: { label: 'Body End', icon: Terminal },
 };
 
-const deviceIcons = {
+const deviceIcons: Record<DeviceType, { icon: any; label: string }> = {
   all: { icon: Monitor, label: 'All Devices' },
   desktop: { icon: Monitor, label: 'Desktop' },
   tablet: { icon: Tablet, label: 'Tablet' },
   mobile: { icon: Smartphone, label: 'Mobile' },
 };
-  mobile: Smartphone,
-};
 
-const statusVariants: Record<CodeSnippetStatus, { label: string; variant: 'default' | 'destructive' | 'outline' | 'secondary' }> = {
+const statusVariants: Record<
+  CodeSnippetStatus,
+  { label: string; variant: 'default' | 'destructive' | 'outline' | 'secondary' }
+> = {
   draft: { label: 'Draft', variant: 'outline' },
   active: { label: 'Active', variant: 'default' },
   inactive: { label: 'Inactive', variant: 'secondary' },
   scheduled: { label: 'Scheduled', variant: 'outline' },
 };
-
-const columns: ColumnDef<CodeSnippet>[] = [
-  {
-    accessorKey: 'name',
-    header: 'Name',
-    cell: ({ row }) => (
-      <div className="flex items-center gap-3">
-        <div className="p-2 rounded-md bg-primary/10 text-primary">
-          <Code2 className="h-5 w-5" />
-        </div>
-        <div className="flex flex-col">
-          <span className="font-medium">{row.getValue('name')}</span>
-          {row.original.description && (
-            <span className="text-xs text-muted-foreground line-clamp-1">
-              {row.original.description}
-            </span>
-          )}
-        </div>
-      </div>
-    ),
-  },
-  {
-    accessorKey: 'location',
-    header: 'Location',
-    cell: ({ row }) => {
-      const location = row.original.location;
-      const { icon: Icon, label } = locationLabels[location];
-      return (
-        <div className="flex items-center space-x-2">
-          <Icon className="h-4 w-4 text-muted-foreground" />
-          <span>{label}</span>
-        </div>
-      );
-    },
-  },
-  {
-    accessorKey: 'device_type',
-    header: 'Devices',
-    cell: ({ row }) => {
-      const deviceType = row.original.device_type as DeviceType;
-      const { icon: Icon, label } = deviceIcons[deviceType];
-      return (
-        <div className="flex items-center space-x-2">
-          <Icon className="h-4 w-4 text-muted-foreground" />
-          <span className="hidden sm:inline">{label}</span>
-        </div>
-      );
-    },
-  },
-  {
-    accessorKey: 'status',
-    header: 'Status',
-    cell: ({ row }) => {
-      const status = row.original.status;
-      const { label, variant } = statusVariants[status] || { label: status, variant: 'outline' as const };
-      return <Badge variant={variant}>{label}</Badge>;
-    },
-  },
-  {
-    accessorKey: 'updated_at',
-    header: 'Last Updated',
-    cell: ({ row }) => {
-      const date = new Date(row.original.updated_at);
-      return (
-        <div className="text-sm text-muted-foreground">
-          <div>{format(date, 'MMM d, yyyy')}</div>
-          <div className="text-xs">{format(date, 'h:mm a')}</div>
-        </div>
-      );
-    },
-  },
-  {
-    id: 'actions',
-    cell: ({ row }) => {
-      const snippet = row.original;
-      
-      const handleDelete = async () => {
-        if (confirm('Are you sure you want to delete this snippet? This action cannot be undone.')) {
-          try {
-            const supabase = createClient();
-            const { error } = await supabase
-              .from('custom_code')
-              .delete()
-              .eq('id', snippet.id);
-              
-            if (error) throw error;
-            
-            toast.success('Snippet deleted successfully');
-            // Refresh the data
-            fetchSnippets();
-          } catch (err) {
-            console.error('Error deleting snippet:', err);
-            toast.error('Failed to delete snippet');
-          }
-        }
-      };
-      
-      const handleDuplicate = async () => {
-        try {
-          const supabase = createClient();
-          const { data: newSnippet, error } = await supabase
-            .from('custom_code')
-            .insert([
-              {
-                ...snippet,
-                name: `${snippet.name} (Copy)`,
-                created_at: new Date().toISOString(),
-                updated_at: new Date().toISOString(),
-              }
-            ])
-            .select()
-            .single();
-            
-          if (error) throw error;
-          
-          toast.success('Snippet duplicated successfully');
-          router.push(`/admin/custom-code/${newSnippet.id}`);
-        } catch (err) {
-          console.error('Error duplicating snippet:', err);
-          toast.error('Failed to duplicate snippet');
-        }
-      };
-      
-      return (
-        <div className="flex items-center space-x-2">
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={() => router.push(`/admin/custom-code/${snippet.id}`)}
-            title="Edit"
-          >
-            <Pencil className="h-4 w-4" />
-          </Button>
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={handleDuplicate}
-            title="Duplicate"
-          >
-            <Copy className="h-4 w-4" />
-          </Button>
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={() => {
-              // Implement preview functionality
-              toast.info('Preview functionality coming soon');
-            }}
-            title="Preview"
-          >
-            <Eye className="h-4 w-4" />
-          </Button>
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={handleDelete}
-            title="Delete"
-            className="text-destructive hover:text-destructive"
-          >
-            <Trash2 className="h-4 w-4" />
-          </Button>
-        </div>
-      );
-    },
-  },
-];
 
 export default function CustomCodePage() {
   const router = useRouter();
@@ -255,8 +87,7 @@ export default function CustomCodePage() {
   const [snippets, setSnippets] = useState<CodeSnippet[]>([]);
   const [filteredSnippets, setFilteredSnippets] = useState<CodeSnippet[]>([]);
   const supabase = createClient();
-  
-  // Define columns with proper typing
+
   const columns: ColumnDef<CodeSnippet>[] = [
     {
       accessorKey: 'name',
@@ -331,17 +162,16 @@ export default function CustomCodePage() {
       id: 'actions',
       cell: ({ row }) => {
         const snippet = row.original;
-        
+
         const handleDelete = async () => {
-          if (confirm('Are you sure you want to delete this snippet? This action cannot be undone.')) {
+          if (confirm('Are you sure you want to delete this snippet?')) {
             try {
               const { error } = await supabase
                 .from('custom_code')
                 .delete()
                 .eq('id', snippet.id);
-                
+
               if (error) throw error;
-              
               toast.success('Snippet deleted successfully');
               fetchSnippets();
             } catch (err) {
@@ -350,7 +180,7 @@ export default function CustomCodePage() {
             }
           }
         };
-        
+
         const handleDuplicate = async () => {
           try {
             const { data: newSnippet, error } = await supabase
@@ -361,13 +191,12 @@ export default function CustomCodePage() {
                   name: `${snippet.name} (Copy)`,
                   created_at: new Date().toISOString(),
                   updated_at: new Date().toISOString(),
-                }
+                },
               ])
               .select()
               .single();
-              
+
             if (error) throw error;
-            
             toast.success('Snippet duplicated successfully');
             router.push(`/admin/custom-code/${newSnippet.id}`);
           } catch (err) {
@@ -375,7 +204,7 @@ export default function CustomCodePage() {
             toast.error('Failed to duplicate snippet');
           }
         };
-        
+
         return (
           <div className="flex items-center space-x-2">
             <Button
@@ -397,10 +226,7 @@ export default function CustomCodePage() {
             <Button
               variant="ghost"
               size="icon"
-              onClick={() => {
-                // Implement preview functionality
-                toast.info('Preview functionality coming soon');
-              }}
+              onClick={() => toast.info('Preview coming soon')}
               title="Preview"
             >
               <Eye className="h-4 w-4" />
@@ -427,9 +253,7 @@ export default function CustomCodePage() {
         .from('custom_code')
         .select('*')
         .order('created_at', { ascending: false });
-
       if (error) throw error;
-
       setSnippets(data || []);
       setFilteredSnippets(data || []);
     } catch (err) {
@@ -453,23 +277,6 @@ export default function CustomCodePage() {
     });
     setFilteredSnippets(filtered);
   }, [snippets, statusFilter, locationFilter, searchQuery]);
-
-  const handleStatusChange = async (id: string, newStatus: string) => {
-    try {
-      const { error } = await supabase
-        .from('custom_code')
-        .update({ status: newStatus, updated_at: new Date().toISOString() })
-        .eq('id', id);
-
-      if (error) throw error;
-
-      toast.success('Status updated successfully');
-      fetchSnippets();
-    } catch (err) {
-      console.error('Error updating status:', err);
-      toast.error('Failed to update status');
-    }
-  };
 
   return (
     <div className="container mx-auto py-6">
@@ -547,31 +354,7 @@ export default function CustomCodePage() {
             </Button>
           </div>
         )}
-              tooltip: 'Preview code'
-            }
-          ]}
-        />
-                        size="icon"
-                        onClick={() => handleDelete(snippet.id)}
-                        className="text-destructive hover:text-destructive/80"
-                        aria-label="Delete code snippet"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </Button>
-                    </div>
-                  </TableCell>
-                </TableRow>
-              ))
-            ) : (
-              <TableRow>
-                <TableCell colSpan={6} className="h-24 text-center text-muted-foreground">
-                  {snippets.length === 0 ? 'No code snippets found. Add your first snippet!' : 'No snippets match your search criteria.'}
-                </TableCell>
-              </TableRow>
-            )}
-          </TableBody>
-        </Table>
       </div>
     </div>
-  )
+  );
 }

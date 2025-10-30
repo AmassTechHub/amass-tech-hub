@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { Plus, ExternalLink } from 'lucide-react';
+import { Plus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { ColumnDef } from '@tanstack/react-table';
 import { AdminPage } from '@/components/admin/AdminPage';
@@ -103,10 +103,13 @@ const columns: ColumnDef<Service>[] = [
     accessorKey: 'status',
     header: 'Status',
     cell: ({ row }) => (
-      <Badge 
+      <Badge
         variant={
-          row.getValue('status') === 'published' ? 'default' :
-          row.getValue('status') === 'draft' ? 'outline' : 'destructive'
+          row.getValue('status') === 'published'
+            ? 'default'
+            : row.getValue('status') === 'draft'
+            ? 'outline'
+            : 'destructive'
         }
         className="capitalize"
       >
@@ -117,26 +120,10 @@ const columns: ColumnDef<Service>[] = [
   {
     accessorKey: 'created_at',
     header: 'Created',
-    cell: ({ row }) => new Date(row.getValue('created_at')).toLocaleDateString(),
+    cell: ({ row }) =>
+      new Date(row.getValue('created_at')).toLocaleDateString(),
   },
 ];
-  id: string;
-  name: string;
-}
-
-interface ServiceWithCategory {
-  id: string;
-  name: string;
-  description: string | null;
-  slug: string;
-  icon_name: string | null;
-  featured: boolean;
-  created_at: string;
-  updated_at: string;
-  category_id: string | null;
-  categories: Category | null;
-  status: 'draft' | 'published' | 'archived';
-}
 
 export default function ServicesPage() {
   const [services, setServices] = useState<Service[]>([]);
@@ -152,30 +139,38 @@ export default function ServicesPage() {
 
   const fetchCategories = async () => {
     try {
-      const { data, error } = await fetchTableData<ServiceCategory>('service_categories');
+      const { data, error } =
+        await fetchTableData<ServiceCategory>('service_categories');
       if (error) throw error;
       setCategories(data || []);
     } catch (err) {
       console.error('Error fetching categories:', err);
-      setError(err instanceof Error ? err : new Error('Failed to load categories'));
+      setError(
+        err instanceof Error ? err : new Error('Failed to load categories')
+      );
     }
   };
 
   const fetchServices = async () => {
     try {
       setIsLoading(true);
-      const { data, error } = await fetchTableData<Service>('services', `
+      const { data, error } = await fetchTableData<Service>(
+        'services',
+        `
         *,
         category:category_id (*)
-      `);
-      
+      `
+      );
+
       if (error) throw error;
-      
+
       setServices(data || []);
       setError(null);
     } catch (err) {
       console.error('Error fetching services:', err);
-      setError(err instanceof Error ? err : new Error('Failed to load services'));
+      setError(
+        err instanceof Error ? err : new Error('Failed to load services')
+      );
     } finally {
       setIsLoading(false);
     }
@@ -183,13 +178,12 @@ export default function ServicesPage() {
 
   const handleStatusChange = async (id: string, status: string) => {
     try {
-      const { data, error } = await updateStatus<Service>('services', id, status);
-      
+      const { error } = await updateStatus<Service>('services', id, status);
       if (error) throw error;
-      
-      setServices(services.map(service => 
-        service.id === id ? { ...service, status } : service
-      ));
+
+      setServices((prev) =>
+        prev.map((s) => (s.id === id ? { ...s, status } : s))
+      );
     } catch (err) {
       console.error('Error updating service status:', err);
       throw err;
@@ -197,18 +191,18 @@ export default function ServicesPage() {
   };
 
   const handleDelete = async (id: string) => {
-    if (!confirm('Are you sure you want to delete this service? This action cannot be undone.')) return;
-    
+    if (
+      !confirm(
+        'Are you sure you want to delete this service? This action cannot be undone.'
+      )
+    )
+      return;
+
     try {
       const supabase = (await import('@/lib/supabase/client')).default;
-      const { error } = await supabase
-        .from('services')
-        .delete()
-        .eq('id', id);
-
+      const { error } = await supabase.from('services').delete().eq('id', id);
       if (error) throw error;
-      
-      setServices(services.filter(service => service.id !== id));
+      setServices((prev) => prev.filter((s) => s.id !== id));
     } catch (err) {
       console.error('Error deleting service:', err);
       throw err;
@@ -220,24 +214,26 @@ export default function ServicesPage() {
       const supabase = (await import('@/lib/supabase/client')).default;
       const { error } = await supabase
         .from('services')
-        .update({ 
+        .update({
           is_featured: !isFeatured,
           featured_order: !isFeatured ? 0 : null,
-          updated_at: new Date().toISOString()
+          updated_at: new Date().toISOString(),
         })
         .eq('id', id);
 
       if (error) throw error;
-      
-      setServices(services.map(service => 
-        service.id === id 
-          ? { 
-              ...service, 
-              is_featured: !isFeatured,
-              featured_order: !isFeatured ? 0 : null 
-            } 
-          : service
-      ));
+
+      setServices((prev) =>
+        prev.map((s) =>
+          s.id === id
+            ? {
+                ...s,
+                is_featured: !isFeatured,
+                featured_order: !isFeatured ? 0 : null,
+              }
+            : s
+        )
+      );
     } catch (err) {
       console.error('Error toggling featured status:', err);
       throw err;
@@ -245,15 +241,15 @@ export default function ServicesPage() {
   };
 
   return (
-    <AdminPage 
+    <AdminPage
       title="Services Management"
       subtitle="Manage your services and offerings"
       isLoading={isLoading}
       error={error}
       actions={
         <div className="flex gap-2">
-          <Button 
-            variant="outline" 
+          <Button
+            variant="outline"
             onClick={() => router.push('/admin/service-categories')}
           >
             Categories
@@ -284,17 +280,17 @@ export default function ServicesPage() {
             label: 'Featured',
             icon: 'Star',
             onClick: (id) => {
-              const service = services.find(s => s.id === id);
+              const service = services.find((s) => s.id === id);
               if (service) {
                 handleFeatureToggle(id, service.is_featured || false);
               }
             },
             isActive: (id) => {
-              const service = services.find(s => s.id === id);
+              const service = services.find((s) => s.id === id);
               return service?.is_featured || false;
             },
             activeVariant: 'default',
-            tooltip: 'Toggle featured status'
+            tooltip: 'Toggle featured status',
           },
           {
             id: 'preview',
@@ -304,10 +300,10 @@ export default function ServicesPage() {
               window.open(`/services/${id}`, '_blank');
             },
             variant: 'ghost',
-            tooltip: 'Preview service'
-          }
+            tooltip: 'Preview service',
+          },
         ]}
       />
     </AdminPage>
-  )
+  );
 }

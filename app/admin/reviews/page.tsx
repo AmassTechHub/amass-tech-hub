@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { Plus, Edit, Trash2, Star } from 'lucide-react';
+import { Plus, Edit, Trash2, Star, Check, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { supabase } from '@/lib/supabase';
 import { toast } from '@/components/ui/use-toast';
@@ -30,9 +30,7 @@ export default function ReviewsAdmin() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
-  const [filters, setFilters] = useState({
-    status: 'all',
-  });
+  const [filters, setFilters] = useState({ status: 'all' });
   const router = useRouter();
 
   useEffect(() => {
@@ -42,15 +40,14 @@ export default function ReviewsAdmin() {
   const fetchReviews = async () => {
     setIsLoading(true);
     setError(null);
-    
+
     try {
       const { data, error } = await supabase
         .from('reviews')
         .select('*')
         .order('created_at', { ascending: false });
-      
+
       if (error) throw error;
-      
       setReviews(data || []);
     } catch (err) {
       console.error('Error fetching reviews:', err);
@@ -69,23 +66,19 @@ export default function ReviewsAdmin() {
     try {
       const { error } = await supabase
         .from('reviews')
-        .update({ 
-          status,
-          updated_at: new Date().toISOString()
-        })
+        .update({ status, updated_at: new Date().toISOString() })
         .eq('id', id);
 
       if (error) throw error;
 
-      setReviews(reviews.map(review => 
-        review.id === id ? { ...review, status } : review
-      ));
+      setReviews((prev) =>
+        prev.map((r) => (r.id === id ? { ...r, status } : r))
+      );
 
       toast({
         title: 'Success',
         description: `Review marked as ${status} successfully.`,
       });
-      
     } catch (error) {
       console.error('Error updating review status:', error);
       toast({
@@ -93,7 +86,6 @@ export default function ReviewsAdmin() {
         description: 'Failed to update review status. Please try again.',
         variant: 'destructive',
       });
-      
       fetchReviews();
     }
   };
@@ -107,9 +99,11 @@ export default function ReviewsAdmin() {
 
       if (error) throw error;
 
-      setReviews(reviews.map(review => 
-        review.id === id ? { ...review, featured: !currentStatus } : review
-      ));
+      setReviews((prev) =>
+        prev.map((r) =>
+          r.id === id ? { ...r, featured: !currentStatus } : r
+        )
+      );
 
       toast({
         title: 'Success',
@@ -127,17 +121,13 @@ export default function ReviewsAdmin() {
 
   const handleDelete = async (id: string) => {
     if (!confirm('Are you sure you want to delete this review?')) return;
-    
-    try {
-      const { error } = await supabase
-        .from('reviews')
-        .delete()
-        .eq('id', id);
 
+    try {
+      const { error } = await supabase.from('reviews').delete().eq('id', id);
       if (error) throw error;
-      
-      setReviews(reviews.filter(review => review.id !== id));
-      
+
+      setReviews((prev) => prev.filter((r) => r.id !== id));
+
       toast({
         title: 'Success',
         description: 'Review deleted successfully.',
@@ -153,13 +143,12 @@ export default function ReviewsAdmin() {
   };
 
   const filteredReviews = reviews.filter((review) => {
-    const matchesSearch = 
+    const matchesSearch =
       review.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
       review.content.toLowerCase().includes(searchTerm.toLowerCase()) ||
       review.author_name.toLowerCase().includes(searchTerm.toLowerCase());
-    
-    const matchesStatus = filters.status === 'all' || review.status === filters.status;
-    
+    const matchesStatus =
+      filters.status === 'all' || review.status === filters.status;
     return matchesSearch && matchesStatus;
   });
 
@@ -170,12 +159,14 @@ export default function ReviewsAdmin() {
       cell: (review: Review) => (
         <div className="font-medium">{review.title}</div>
       ),
-      filterable: true,
     },
     {
       id: 'author',
       header: 'Author',
-      cell: (review: Review) => review.author_name,
+      cell: (review: Review) =>
+        [review.author_name, review.author_company]
+          .filter(Boolean)
+          .join(' at '),
     },
     {
       id: 'rating',
@@ -191,24 +182,19 @@ export default function ReviewsAdmin() {
       id: 'status',
       header: 'Status',
       cell: (review: Review) => (
-        <Badge 
+        <Badge
           variant={
-            review.status === 'approved' ? 'default' :
-            review.status === 'pending' ? 'outline' : 'destructive'
+            review.status === 'approved'
+              ? 'default'
+              : review.status === 'pending'
+              ? 'outline'
+              : 'destructive'
           }
           className="capitalize"
         >
           {review.status}
         </Badge>
       ),
-      filterable: true,
-      filterType: 'select' as const,
-      filterOptions: [
-        { value: 'all', label: 'All Statuses' },
-        { value: 'pending', label: 'Pending' },
-        { value: 'approved', label: 'Approved' },
-        { value: 'rejected', label: 'Rejected' },
-      ],
     },
     {
       id: 'actions',
@@ -218,28 +204,57 @@ export default function ReviewsAdmin() {
           <Button
             variant="ghost"
             size="sm"
-            onClick={() => router.push(`/admin/reviews/${review.id}/edit`)}
+            onClick={() => handleToggleFeatured(review.id, review.featured)}
+            title={
+              review.featured
+                ? 'Remove from featured'
+                : 'Add to featured'
+            }
           >
-            <Edit className="h-4 w-4" />
-            <span className="sr-only">Edit</span>
+            <Star
+              className={`h-4 w-4 ${
+                review.featured
+                  ? 'fill-yellow-400 text-yellow-400'
+                  : 'text-muted-foreground'
+              }`}
+            />
           </Button>
           <Button
             variant="ghost"
             size="sm"
             onClick={() => handleStatusChange(review.id, 'approved')}
             disabled={review.status === 'approved'}
+            title="Approve"
           >
             <Check className="h-4 w-4 text-green-500" />
-            <span className="sr-only">Approve</span>
           </Button>
           <Button
             variant="ghost"
             size="sm"
             onClick={() => handleStatusChange(review.id, 'rejected')}
             disabled={review.status === 'rejected'}
+            title="Reject"
           >
             <X className="h-4 w-4 text-red-500" />
-            <span className="sr-only">Reject</span>
+          </Button>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() =>
+              router.push(`/admin/reviews/${review.id}/edit`)
+            }
+            title="Edit"
+          >
+            <Edit className="h-4 w-4" />
+          </Button>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => handleDelete(review.id)}
+            title="Delete"
+            className="text-destructive hover:text-destructive"
+          >
+            <Trash2 className="h-4 w-4" />
           </Button>
         </div>
       ),
@@ -247,11 +262,7 @@ export default function ReviewsAdmin() {
   ];
 
   return (
-    <AdminPage 
-      title="Reviews"
-      isLoading={isLoading}
-      error={error}
-    >
+    <AdminPage title="Reviews" isLoading={isLoading} error={error}>
       <DataTable
         columns={columns}
         data={filteredReviews}
@@ -261,98 +272,11 @@ export default function ReviewsAdmin() {
         onAddNew={() => router.push('/admin/reviews/new')}
         addNewLabel="Add Review"
         filters={filters}
-        onFilterChange={(key, value) => 
-          setFilters(prev => ({ ...prev, [key]: value }))
+        onFilterChange={(key, value) =>
+          setFilters((prev) => ({ ...prev, [key]: value }))
         }
         emptyMessage="No reviews found. Create your first review."
       />
-                            {[review.author_title, review.author_company].filter(Boolean).join(' at ')}
-                          </p>
-                        )}
-                      </div>
-                    </div>
-                  </TableCell>
-                  <TableCell>
-                    <Badge variant={getStatusBadgeVariant(review.status)}>
-                      {review.status.charAt(0).toUpperCase() + review.status.slice(1)}
-                    </Badge>
-                  </TableCell>
-                  <TableCell>
-                    {new Date(review.created_at).toLocaleDateString()}
-                  </TableCell>
-                  <TableCell>
-                    <div className="flex justify-end space-x-1">
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className={`h-8 w-8 ${review.featured ? 'bg-primary/10' : ''}`}
-                        onClick={() => handleToggleFeatured(review.id, review.featured)}
-                        title={review.featured ? 'Remove from featured' : 'Add to featured'}
-                      >
-                        <Star
-                          className={`h-4 w-4 ${review.featured ? 'fill-yellow-400 text-yellow-400' : ''}`}
-                        />
-                      </Button>
-                      
-                      {review.status !== 'approved' && (
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="h-8 w-8 text-green-600 hover:bg-green-50 hover:text-green-700"
-                          onClick={() => handleStatusChange(review.id, 'approved')}
-                          title="Approve"
-                        >
-                          <Check className="h-4 w-4" />
-                        </Button>
-                      )}
-                      
-                      {review.status !== 'rejected' && (
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="h-8 w-8 text-red-600 hover:bg-red-50 hover:text-red-700"
-                          onClick={() => handleStatusChange(review.id, 'rejected')}
-                          title="Reject"
-                        >
-                          <X className="h-4 w-4" />
-                        </Button>
-                      )}
-                      
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="h-8 w-8"
-                        onClick={() => router.push(`/admin/reviews/${review.id}/edit`)}
-                        title="Edit"
-                      >
-                        <Edit className="h-4 w-4" />
-                      </Button>
-                      
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="h-8 w-8 text-red-600 hover:bg-red-50 hover:text-red-700"
-                        onClick={() => handleDelete(review.id)}
-                        title="Delete"
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  </TableCell>
-                </TableRow>
-              ))
-            ) : (
-              <TableRow>
-                <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">
-                  {searchTerm || statusFilter !== 'all' 
-                    ? 'No matching reviews found' 
-                    : 'No reviews found. Create your first review.'}
-                </TableCell>
-              </TableRow>
-            )}
-          </TableBody>
-        </Table>
-      </div>
     </AdminPage>
   );
 }
