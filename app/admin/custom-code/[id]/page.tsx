@@ -10,72 +10,56 @@ import { AlertCircle, ArrowLeft } from 'lucide-react'
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
 import { Button } from '@/components/ui/button'
 import Link from 'next/link'
+import type { Database } from '@/lib/database.types'
 
-type CustomCode = {
-  id: string
-  author_id?: string
-  name: string
-  code: string
-  description?: string | null
-  status: 'draft' | 'published' | 'archived'
-  priority: number
-  language: string
-  created_at?: string
-  updated_at?: string
-  conditions?: {
-    pages?: string[]
-    user_roles?: string[]
-    logged_in?: boolean
-    query_params?: Record<string, string>
-  }
-}
+type CustomCodeRow = Database['public']['Tables']['custom_code']['Row']
+type CustomCodeUpdate = Database['public']['Tables']['custom_code']['Update']
 
 export default function EditCustomCodePage({ params }: { params: { id: string } }) {
-  const [snippet, setSnippet] = useState<CodeSnippet | null>(null)
+  const [snippet, setSnippet] = useState<CustomCodeRow | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [isSaving, setIsSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const router = useRouter()
   const supabase = createClient()
 
-  /* ---------------------------- Fetch existing snippet --------------------------- */
+  // ---------------------------- Fetch snippet ----------------------------
   useEffect(() => {
     const fetchSnippet = async () => {
       try {
         const { data, error } = await supabase
-          .from('custom_code') // ✅ no generics here
+          .from('custom_code')
           .select('*')
           .eq('id', params.id)
           .single()
 
         if (error) throw error
-        setSnippet(data as CodeSnippet)
+        setSnippet(data)
       } catch (err) {
         console.error('Error fetching snippet:', err)
-        setError(
-          'Failed to load snippet. It may have been deleted or you may not have permission to view it.'
-        )
+        setError('Failed to load snippet.')
       } finally {
         setIsLoading(false)
       }
     }
 
     if (params.id) fetchSnippet()
-    else setIsLoading(false)
   }, [params.id, supabase])
 
-  /* ----------------------------- Handle save updates ----------------------------- */
-  const handleSave = async (data: Omit<CodeSnippet, 'id' | 'created_at' | 'updated_at'>) => {
+  // ---------------------------- Handle save ----------------------------
+  const handleSave = async (data: Omit<CustomCodeUpdate, 'updated_at'>) => {
     if (!snippet) return
 
     setIsSaving(true)
     try {
+      const updateData: CustomCodeUpdate = {
+        ...data,
+        updated_at: new Date().toISOString(),
+      }
+
       const { error } = await supabase
-        .from('custom_code') // ✅ no generics
-        .update({
-          ...data,
-          updated_at: new Date().toISOString(),
-        })
+        .from('custom_code')
+        .update(updateData)
         .eq('id', snippet.id)
 
       if (error) throw error
@@ -91,36 +75,31 @@ export default function EditCustomCodePage({ params }: { params: { id: string } 
     }
   }
 
-  /* ----------------------------- Loading and errors ------------------------------ */
-  if (isLoading) {
+  // ---------------------------- Render ----------------------------
+  if (isLoading)
     return (
       <div className="flex items-center justify-center h-64">
         <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary"></div>
       </div>
     )
-  }
 
-  if (error) {
+  if (error)
     return (
       <div className="max-w-4xl mx-auto p-6">
-        <div className="space-y-4">
-          <Alert variant="destructive">
-            <AlertCircle className="h-4 w-4" />
-            <AlertTitle>Error</AlertTitle>
-            <AlertDescription>{error}</AlertDescription>
-          </Alert>
-          <Button asChild variant="outline">
-            <Link href="/admin/custom-code">
-              <ArrowLeft className="mr-2 h-4 w-4" />
-              Back to Snippets
-            </Link>
-          </Button>
-        </div>
+        <Alert variant="destructive">
+          <AlertCircle className="h-4 w-4" />
+          <AlertTitle>Error</AlertTitle>
+          <AlertDescription>{error}</AlertDescription>
+        </Alert>
+        <Button asChild variant="outline" className="mt-4">
+          <Link href="/admin/custom-code">
+            <ArrowLeft className="mr-2 h-4 w-4" />
+            Back to Snippets
+          </Link>
+        </Button>
       </div>
     )
-  }
 
-  /* ------------------------------ Render editor UI ------------------------------ */
   return (
     <div className="max-w-6xl mx-auto p-6 space-y-6">
       <div className="flex items-center justify-between">
@@ -151,8 +130,7 @@ export default function EditCustomCodePage({ params }: { params: { id: string } 
           <AlertCircle className="h-4 w-4" />
           <AlertTitle>Snippet not found</AlertTitle>
           <AlertDescription>
-            The requested snippet could not be found. It may have been deleted or you may not have
-            permission to view it.
+            This snippet could not be found. It may have been deleted or you lack permission.
           </AlertDescription>
         </Alert>
       )}

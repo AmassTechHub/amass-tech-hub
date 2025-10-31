@@ -1,8 +1,9 @@
-import { createServerClient as createSupabaseServerClient } from '@supabase/ssr'
-import { cookies } from 'next/headers'
-import type { Database } from '@/types/supabase'
+// lib/supabase/server.ts
+import { createServerClient } from "@supabase/ssr"
+import { cookies } from "next/headers"
+import type { Database } from "@/types/supabase"
 
-// Type for cookie options
+// ✅ Type-safe cookie helper
 interface CookieOptions {
   name: string
   value: string
@@ -12,131 +13,109 @@ interface CookieOptions {
   path?: string
   secure?: boolean
   httpOnly?: boolean
-  sameSite?: 'lax' | 'strict' | 'none' | boolean
+  sameSite?: "lax" | "strict" | "none" | boolean
 }
 
-// Regular server component client
-export function createServerClient() {
+// ✅ Factory for authenticated SSR client
+export function createServerClientTyped() {
   const cookieStore = cookies()
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
-  const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
+  const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
 
   if (!supabaseUrl || !supabaseAnonKey) {
-    throw new Error(
-      'Missing NEXT_PUBLIC_SUPABASE_URL or NEXT_PUBLIC_SUPABASE_ANON_KEY. Check your environment variables.'
-    )
+    throw new Error("Missing Supabase environment variables.")
   }
 
-  const cookieOptions = {
-    get(name: string) {
-      return cookieStore.get(name)?.value
-    },
-    set(name: string, value: string, options: Partial<Omit<CookieOptions, 'name' | 'value'>> = {}) {
-      cookieStore.set({ 
-        name, 
-        value, 
-        ...options,
-        path: '/',
-        sameSite: 'lax',
-        secure: process.env.NODE_ENV === 'production'
-      })
-    },
-    remove(name: string, options: Partial<Omit<CookieOptions, 'name' | 'value'>> = {}) {
-      cookieStore.set({ 
-        name, 
-        value: '', 
-        ...options,
-        path: '/',
-        sameSite: 'lax',
-        secure: process.env.NODE_ENV === 'production',
-        maxAge: 0
-      })
-    }
-  }
-
-  return createSupabaseServerClient<Database>(supabaseUrl, supabaseAnonKey, {
+  return createServerClient<Database>(supabaseUrl, supabaseAnonKey, {
     cookies: {
-      get: (name: string) => cookieOptions.get(name),
-      set: (name: string, value: string, options: any) => 
-        cookieOptions.set(name, value, options),
-      remove: (name: string, options: any) => 
-        cookieOptions.remove(name, options)
-    },
-    auth: {
-      persistSession: false,
-      autoRefreshToken: false,
-      detectSessionInUrl: false
-    }
-  })
-}
-
-// Admin client for server-side operations
-export function createAdminClient() {
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
-  const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY
-
-  if (!supabaseUrl || !supabaseServiceKey) {
-    throw new Error(
-      'Missing NEXT_PUBLIC_SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY. Check your environment variables.'
-    )
-  }
-
-  const cookieOptions = {
-    get: (name: string) => '',
-    set: (name: string, value: string, options: any) => {},
-    remove: (name: string, options: any) => {}
-  }
-
-  return createSupabaseServerClient<Database>(supabaseUrl, supabaseServiceKey, {
-    cookies: {
-      get: (name: string) => cookieOptions.get(name),
-      set: (name: string, value: string, options: any) => 
-        cookieOptions.set(name, value, options),
-      remove: (name: string, options: any) => 
-        cookieOptions.remove(name, options)
+      get: (name: string) => cookieStore.get(name)?.value,
+      set: (name: string, value: string, options: Partial<CookieOptions> = {}) => {
+        cookieStore.set({
+          name,
+          value,
+          path: "/",
+          sameSite: "lax",
+          secure: process.env.NODE_ENV === "production",
+          ...options,
+        })
+      },
+      remove: (name: string, options: Partial<CookieOptions> = {}) => {
+        cookieStore.set({
+          name,
+          value: "",
+          path: "/",
+          sameSite: "lax",
+          secure: process.env.NODE_ENV === "production",
+          maxAge: 0,
+          ...options,
+        })
+      },
     },
     auth: {
       persistSession: false,
       autoRefreshToken: false,
       detectSessionInUrl: false,
-      flowType: 'pkce',
     },
-    global: {
-      headers: {
-        'x-supabase-admin': 'true'
-      }
-    }
   })
 }
 
-// Helper function to get the current user's session
-export async function getCurrentUser() {
-  const supabase = createServerClient()
-  const { data: { session }, error } = await supabase.auth.getSession()
-  
-  if (error) {
-    console.error('Error getting session:', error)
-    return null
+// ✅ Factory for Supabase Service Role (admin)
+export function createAdminClient() {
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
+  const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY!
+
+  if (!supabaseUrl || !serviceRoleKey) {
+    throw new Error("Missing NEXT_PUBLIC_SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY.")
   }
-  
-  return session?.user ?? null
+
+  return createServerClient<Database>(supabaseUrl, serviceRoleKey, {
+    cookies: {
+      get: () => "",
+      set: () => {},
+      remove: () => {},
+    },
+    auth: {
+      persistSession: false,
+      autoRefreshToken: false,
+      detectSessionInUrl: false,
+    },
+    global: {
+      headers: {
+        "x-supabase-admin": "true",
+      },
+    },
+  })
 }
 
-// Helper function to check if user is admin
+// ✅ Get current authenticated user (SSR-safe)
+export async function getCurrentUser() {
+  const supabase = createServerClientTyped()
+  const { data, error } = await supabase.auth.getSession()
+
+  if (error) {
+    console.error("Error getting session:", error)
+    return null
+  }
+
+  return data.session?.user ?? null
+}
+
+// ✅ Check if user is admin
 export async function isUserAdmin() {
   const user = await getCurrentUser()
   if (!user) return false
-  
-  const { data, error } = await createServerClient()
-    .from('users')
-    .select('role')
-    .eq('id', user.id)
-    .single<{ role: string }>()
-    
+
+  const supabase = createServerClientTyped()
+  const { data, error } = await supabase
+    .from("users")
+    .select("role")
+    .eq("id", user.id)
+    .maybeSingle<{ role: string }>()
+
   if (error) {
-    console.error('Error checking admin status:', error)
+    console.error("Error checking admin status:", error)
     return false
   }
-  
-  return data?.role === 'admin'
+
+  return data?.role === "admin"
 }
